@@ -6,973 +6,232 @@
 <title>CineBox — Películas a $10</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #080810;
-  --surface: #10101c;
-  --border: #ffffff12;
-  --border-bright: #ffffff22;
-  --accent: #e8ff47;
-  --accent2: #ff6b35;
-  --text: #f0f0fa;
-  --muted: #5a5a72;
-}
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Sora', sans-serif;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-body::before {
-  content:'';
-  position: fixed;
-  width: 500px; height: 500px;
-  background: radial-gradient(circle, rgba(232,255,71,0.05) 0%, transparent 70%);
-  top: -150px; right: -150px;
-  pointer-events: none;
-  z-index: 0;
-  animation: bgpulse 8s ease-in-out infinite;
-}
-@keyframes bgpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
-
-/* HEADER */
-header {
-  padding: 16px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  position: sticky; top: 0;
-  background: rgba(8,8,16,0.96);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid var(--border);
-  z-index: 100;
-}
-.logo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:4px; color:var(--accent); }
-.logo em { color:var(--text); opacity:0.4; font-style:normal; }
-.badge { background:var(--accent); color:#080810; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; padding:5px 13px; border-radius:20px; }
-
-/* TABS */
-.tabs {
-  display: flex;
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 57px;
-  background: rgba(8,8,16,0.96);
-  backdrop-filter: blur(16px);
-  z-index: 99;
-}
-.tab {
-  flex: 1; padding: 13px; text-align: center;
-  font-family:'JetBrains Mono',monospace; font-size:11px;
-  text-transform:uppercase; letter-spacing:1px;
-  color: var(--muted); cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-/* VIEWS */
-#catalogView { display:block; }
-#chatView { display:none; padding: 16px 16px 130px; }
-
-/* SEARCH */
-.search-area {
-  padding: 14px 16px 10px;
-  position: sticky; top: 103px;
-  background: rgba(8,8,16,0.96);
-  backdrop-filter: blur(12px);
-  z-index: 98;
-}
-.search-row { display:flex; gap:8px; margin-bottom:10px; }
-.search-input {
-  flex:1;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid var(--border-bright);
-  border-radius: 24px;
-  padding: 11px 18px;
-  color: var(--text);
-  font-family:'Sora',sans-serif; font-size:14px;
-  outline: none; transition: border-color 0.2s;
-}
-.search-input:focus { border-color: var(--accent); }
-.search-input::placeholder { color: var(--muted); }
-.search-btn {
-  background: var(--accent); color:#080810;
-  border:none; border-radius:24px;
-  padding: 11px 16px;
-  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
-  cursor:pointer; white-space:nowrap; transition: opacity 0.2s;
-}
-.search-btn:disabled { opacity:0.4; }
-
-.genre-strip { display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-.genre-strip::-webkit-scrollbar { display:none; }
-.gchip {
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border-bright);
-  color: var(--muted);
-  padding: 6px 13px;
-  border-radius:20px;
-  font-family:'JetBrains Mono',monospace; font-size:10px;
-  text-transform:uppercase; letter-spacing:0.5px;
-  white-space:nowrap; cursor:pointer; flex-shrink:0;
-  transition: all 0.2s;
-}
-.gchip.active, .gchip:hover { background:rgba(232,255,71,0.12); border-color:var(--accent); color:var(--accent); }
-
-.count-bar { padding: 8px 16px 6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-
-/* GRID */
-.movies-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  padding: 4px 12px 130px;
-}
-
-.movie-tile {
-  position:relative; border-radius:8px; overflow:hidden;
-  cursor:pointer; aspect-ratio:2/3;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  transition: transform 0.2s, border-color 0.2s;
-  animation: fadeUp 0.3s ease both;
-}
-.movie-tile:active { transform: scale(0.97); }
-.movie-tile:hover { border-color: var(--accent); }
-
-@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-.movie-tile img { width:100%; height:100%; object-fit:cover; display:block; }
-
-.tile-overlay {
-  position:absolute; bottom:0; left:0; right:0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.92));
-  padding: 22px 6px 7px;
-}
-.tile-title { font-family:'Bebas Neue',sans-serif; font-size:13px; color:white; line-height:1.1; }
-.tile-year { font-family:'JetBrains Mono',monospace; font-size:9px; color:rgba(255,255,255,0.45); margin-top:1px; }
-.tile-price {
-  position:absolute; top:5px; right:5px;
-  background:var(--accent); color:#080810;
-  font-family:'Bebas Neue',sans-serif; font-size:13px;
-  padding:2px 6px; border-radius:4px;
-}
-
-.no-poster {
-  width:100%; height:100%;
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  gap:6px; font-size:26px; color:var(--muted);
-  background: linear-gradient(135deg,#1a1a2e,#16213e);
-}
-.no-poster span { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; }
-
-.skeleton { background:linear-gradient(90deg,var(--surface) 25%,#1e1e30 50%,var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; aspect-ratio:2/3; }
-@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-
-.empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--muted); }
-.empty-state .icon { font-size:48px; margin-bottom:12px; }
-.empty-state p { font-size:13px; line-height:1.6; }
-
-/* CHAT */
-.chat-status {
-  display:flex; align-items:center; gap:7px;
-  font-family:'JetBrains Mono',monospace; font-size:10px;
-  color:var(--muted); text-transform:uppercase; letter-spacing:1px;
-  margin-bottom:14px;
-}
-.status-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pdot 2s ease infinite; }
-@keyframes pdot { 0%,100%{opacity:1} 50%{opacity:0.3} }
-
-.quick-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
-.qchip {
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border-bright);
-  color:var(--muted);
-  padding:7px 13px; border-radius:20px;
-  font-family:'JetBrains Mono',monospace; font-size:10px;
-  text-transform:uppercase; letter-spacing:0.5px;
-  cursor:pointer; transition:all 0.2s;
-}
-.qchip:hover { background:rgba(232,255,71,0.1); border-color:var(--accent); color:var(--accent); }
-
-.messages { display:flex; flex-direction:column; gap:14px; }
-
-.msg-row { display:flex; gap:10px; animation:fadeUp 0.3s ease both; }
-.msg-row.user { flex-direction:row-reverse; }
-
-.av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; margin-top:2px; }
-.av.ai { background:var(--accent); color:#080810; }
-.av.user { background:var(--accent2); color:white; }
-
-.bubble { max-width:84%; padding:12px 15px; border-radius:16px; font-size:14px; line-height:1.55; }
-.bubble.ai { background:rgba(255,255,255,0.05); border:1px solid var(--border-bright); border-top-left-radius:4px; }
-.bubble.user { background:var(--accent2); color:white; border-bottom-right-radius:4px; }
-.bubble.loading { background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; }
-
-.dots span { animation:blink 1.4s infinite; display:inline-block; }
-.dots span:nth-child(2){animation-delay:0.2s} .dots span:nth-child(3){animation-delay:0.4s}
-@keyframes blink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
-
-.chat-results { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
-.chat-movie-card { background:rgba(255,255,255,0.04); border:1px solid var(--border-bright); border-radius:10px; overflow:hidden; cursor:pointer; transition:all 0.2s; }
-.chat-movie-card:hover { border-color:var(--accent); transform:translateY(-2px); }
-.chat-movie-card img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
-.chat-movie-info { padding:7px 8px; }
-.chat-movie-title { font-family:'Bebas Neue',sans-serif; font-size:13px; color:var(--accent); line-height:1.1; margin-bottom:2px; }
-.chat-movie-meta { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted); text-transform:uppercase; }
-
-/* INPUT FIJO */
-.input-area {
-  position:fixed; bottom:0; left:0; right:0;
-  padding:12px 16px 20px;
-  background:rgba(8,8,16,0.97);
-  backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);
-  z-index:100;
-}
-.input-row { display:flex; gap:10px; align-items:flex-end; }
-.input-box {
-  flex:1;
-  background:rgba(255,255,255,0.06);
-  border:1px solid var(--border-bright);
-  border-radius:24px;
-  padding:13px 18px;
-  color:var(--text);
-  font-family:'Sora',sans-serif; font-size:14px;
-  outline:none; resize:none;
-  transition:border-color 0.2s;
-  max-height:100px; scrollbar-width:none;
-}
-.input-box:focus { border-color:var(--accent); }
-.input-box::placeholder { color:var(--muted); }
-.send-btn {
-  width:46px; height:46px;
-  background:var(--accent); color:#080810;
-  border:none; border-radius:50%;
-  font-size:18px; font-weight:700;
-  cursor:pointer; display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; transition:transform 0.2s, opacity 0.2s;
-}
-.send-btn:hover{transform:scale(1.08)} .send-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none}
-
-/* MODAL */
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:500; display:none; align-items:flex-end; }
-.modal-overlay.open { display:flex; }
-.modal { width:100%; background:#12121e; border:1px solid var(--border-bright); border-radius:20px 20px 0 0; overflow:hidden; animation:slideUp 0.3s ease; max-height:90vh; overflow-y:auto; scrollbar-width:none; }
+:root{--bg:#0c0c0c;--surface:#161616;--card:#1e1e1e;--border:#2a2a2a;--accent:#ff3f3f;--accent-dark:#cc2222;--gold:#f5c518;--gold-dim:#f5c51833;--green:#22c55e;--text:#f5f5f5;--muted:#777;--muted2:#444}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;min-height:100vh;overflow-x:hidden}
+header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:rgba(12,12,12,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px}.logo span{color:var(--accent)}
+.cart-icon-btn{position:relative;background:var(--surface);border:1px solid var(--border);color:var(--text);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all 0.2s}
+.cart-icon-btn.has-items{background:var(--accent);border-color:var(--accent);color:white;box-shadow:0 0 0 2px white}
+.cbadge{position:absolute;top:-4px;right:-4px;background:var(--gold);color:#000;width:18px;height:18px;border-radius:50%;font-size:10px;font-weight:700;display:none;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace}
+.cart-icon-btn.has-items .cbadge{display:flex}
+.tabs{display:flex;border-bottom:1px solid var(--border);position:sticky;top:57px;background:rgba(12,12,12,0.97);backdrop-filter:blur(20px);z-index:99}
+.tab{flex:1;padding:12px;text-align:center;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}.tab.dimmed{opacity:0.45;cursor:default}
+.soon-pill{font-family:'JetBrains Mono',monospace;font-size:8px;background:var(--accent);color:white;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle}
+.hero{background:linear-gradient(135deg,#1a0000 0%,#0c0c0c 60%);border-bottom:1px solid #2a0000;padding:20px 16px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(255,63,63,0.1) 0%,transparent 70%)}
+.hero-tag{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:6px}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1px;line-height:1;margin-bottom:6px}.hero-title span{color:var(--accent)}
+.hero-sub{font-size:13px;color:rgba(245,245,245,0.45);line-height:1.5;margin-bottom:14px}
+.bundles-row{display:flex;gap:8px;flex-wrap:wrap}
+.bpill{background:rgba(245,197,24,0.08);border:1px solid rgba(245,197,24,0.25);color:var(--gold);padding:7px 14px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;white-space:nowrap}
+.search-area{padding:12px 16px 8px;position:sticky;top:103px;background:rgba(12,12,12,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);z-index:98}
+.search-row{display:flex;gap:8px;margin-bottom:10px}
+.search-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 16px;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;transition:border-color 0.2s}
+.search-input:focus{border-color:var(--accent)}.search-input::placeholder{color:var(--muted2)}
+.search-btn{background:var(--accent);color:white;border:none;border-radius:8px;padding:11px 18px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px;cursor:pointer;white-space:nowrap}
+.genre-strip{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}.genre-strip::-webkit-scrollbar{display:none}
+.gchip{background:var(--surface);border:1px solid var(--border);color:var(--muted);padding:6px 13px;border-radius:6px;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;white-space:nowrap;cursor:pointer;flex-shrink:0;transition:all 0.15s}
+.gchip.active{background:var(--accent);border-color:var(--accent);color:white}
+.count-bar{padding:8px 16px 4px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.movies-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px 10px 100px}
+.movie-tile{position:relative;border-radius:6px;overflow:hidden;cursor:pointer;aspect-ratio:2/3;background:var(--surface);transition:transform 0.15s;animation:fadeUp 0.3s ease both}
+.movie-tile:active{transform:scale(0.96)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.movie-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile-overlay{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.95));padding:28px 6px 7px}
+.tile-title{font-family:'Bebas Neue',sans-serif;font-size:13px;color:white;line-height:1.1}
+.tile-year{font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px}
+.tile-badge{position:absolute;top:5px;left:5px;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;padding:2px 6px;border-radius:3px}
+.tile-badge.hot{background:var(--accent);color:white}.tile-badge.nbadge{background:var(--green);color:white}
+.tile-price{position:absolute;top:5px;right:5px;background:rgba(0,0,0,0.75);border:1px solid rgba(245,197,24,0.35);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:13px;padding:2px 6px;border-radius:4px}
+.tile-in-cart{position:absolute;inset:0;border:2px solid var(--accent);border-radius:6px;pointer-events:none}
+.no-poster{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:28px;background:var(--surface)}
+.skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--card) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;aspect-ratio:2/3}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted)}.empty-state .icon{font-size:44px;margin-bottom:10px}.empty-state p{font-size:13px;line-height:1.6}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;display:none;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{width:100%;background:var(--bg);border-radius:16px 16px 0 0;overflow:hidden;animation:slideUp 0.28s cubic-bezier(0.32,0.72,0,1);max-height:92vh;overflow-y:auto;scrollbar-width:none}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-.modal-poster { width:100%; max-height:52vw; object-fit:cover; object-position:center 20%; display:block; }
-.modal-body { padding:20px 20px 30px; }
-.modal-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; margin-bottom:4px; }
-.modal-meta { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
-.modal-overview { font-size:14px; color:rgba(240,240,250,0.65); line-height:1.65; margin-bottom:20px; }
-.modal-price { font-family:'Bebas Neue',sans-serif; font-size:38px; color:var(--accent2); margin-bottom:16px; }
-.modal-cta { width:100%; background:var(--accent); color:#080810; border:none; border-radius:12px; padding:14px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; cursor:pointer; margin-bottom:8px; transition:opacity 0.2s; }
-.modal-cta:hover{opacity:0.9}
-.modal-add-cart { width:100%; background:rgba(232,255,71,0.12); border:1px solid var(--accent); color:var(--accent); border-radius:12px; padding:13px; font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; cursor:pointer; margin-bottom:8px; transition:all 0.2s; }
-.modal-add-cart:hover { background:rgba(232,255,71,0.2); }
-.modal-add-cart.added { background:var(--accent); color:#080810; }
-.modal-close { width:100%; background:transparent; border:1px solid var(--border-bright); color:var(--muted); border-radius:12px; padding:12px; font-family:'Sora',sans-serif; font-size:13px; cursor:pointer; }
-
-/* CARRITO FAB */
-.cart-fab {
-  position: fixed;
-  bottom: 28px; right: 20px;
-  background: var(--accent);
-  color: #080810;
-  border: none;
-  border-radius: 50px;
-  padding: 13px 20px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 17px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  display: none;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 24px rgba(232,255,71,0.3);
-  z-index: 200;
-  transition: transform 0.2s;
-}
-.cart-fab:hover { transform: scale(1.04); }
-.cart-fab.visible { display: flex; }
-
-.cart-count {
-  background: #080810;
-  color: var(--accent);
-  width: 22px; height: 22px;
-  border-radius: 50%;
-  font-size: 13px;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* CARRITO DRAWER */
-.cart-drawer {
-  position: fixed; inset: 0;
-  z-index: 600;
-  display: none;
-}
-.cart-drawer.open { display: block; }
-
-.cart-overlay {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.85);
-}
-
-.cart-panel {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  background: #12121e;
-  border: 1px solid var(--border-bright);
-  border-radius: 20px 20px 0 0;
-  padding: 20px 20px 30px;
-  max-height: 85vh;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.cart-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.cart-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 24px; letter-spacing: 1px;
-  color: var(--accent);
-}
-
-.cart-close {
-  background: var(--border-bright); border: none; color: var(--text);
-  width: 30px; height: 30px; border-radius: 50%;
-  cursor: pointer; font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-.cart-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-
-.cart-item {
-  display: flex; align-items: center; gap: 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-}
-
-.cart-item img {
-  width: 40px; height: 60px;
-  object-fit: cover; border-radius: 5px; flex-shrink: 0;
-}
-
-.cart-item-info { flex: 1; min-width: 0; }
-.cart-item-title { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--text); line-height:1.1; }
-.cart-item-year { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:2px; }
-
-.cart-item-remove {
-  background: transparent; border: none;
-  color: var(--muted); font-size: 18px; cursor: pointer;
-  padding: 4px; flex-shrink: 0;
-  transition: color 0.2s;
-}
-.cart-item-remove:hover { color: var(--accent2); }
-
-.cart-total {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-}
-
-.cart-total-label { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-.cart-total-amount { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--accent2); }
-
-.cart-wa-btn {
-  width: 100%;
-  background: #25D366;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  padding: 15px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 20px;
-  letter-spacing: 1px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: opacity 0.2s;
-}
-.cart-wa-btn:hover { opacity: 0.9; }
-
-.cart-empty {
-  text-align: center; padding: 40px 20px;
-  color: var(--muted); font-size: 13px;
-}
-.cart-empty .icon { font-size: 40px; margin-bottom: 10px; }
+.modal-poster-wrap{position:relative}
+.modal-poster{width:100%;max-height:56vw;object-fit:cover;object-position:center 15%;display:block}
+.modal-poster-gradient{position:absolute;bottom:0;left:0;right:0;height:60%;background:linear-gradient(transparent,var(--bg))}
+.modal-rating{position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.8);border:1px solid var(--gold-dim);color:var(--gold);padding:5px 10px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:12px;display:flex;align-items:center;gap:4px}
+.modal-body{padding:16px 16px 30px}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:0.5px;line-height:1;margin-bottom:4px}
+.modal-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.modal-overview{font-size:13px;color:rgba(245,245,245,0.55);line-height:1.65;margin-bottom:18px}
+.modal-price-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.modal-price-main{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);line-height:1}
+.modal-price-main small{font-size:16px;color:var(--muted)}
+.modal-price-sub{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-align:right;line-height:1.6}
+.modal-price-sub strong{color:var(--green);display:block;font-size:12px}
+.upsell-hint{background:rgba(245,197,24,0.07);border:1px solid rgba(245,197,24,0.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--gold);font-family:'JetBrains Mono',monospace;display:none}
+.upsell-hint.show{display:block}
+.modal-btn-add{width:100%;background:var(--accent);color:white;border:none;border-radius:10px;padding:15px;margin-bottom:8px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.modal-btn-add.in-cart{background:var(--green)}
+.modal-btn-wa{width:100%;background:#25D366;color:white;border:none;border-radius:10px;padding:14px;margin-bottom:8px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.modal-btn-close{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:12px;font-family:'Sora',sans-serif;font-size:13px;cursor:pointer}
+.cart-drawer{position:fixed;inset:0;z-index:600;display:none}.cart-drawer.open{display:block}
+.cart-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.88)}
+.cart-panel{position:absolute;bottom:0;left:0;right:0;background:var(--bg);border:1px solid var(--border);border-radius:16px 16px 0 0;padding:20px 16px 30px;max-height:88vh;overflow-y:auto;scrollbar-width:none}
+.cart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.cart-head-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px}
+.cart-x{background:var(--surface);border:1px solid var(--border);color:var(--text);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.cart-upsell{background:linear-gradient(135deg,rgba(245,197,24,0.1),rgba(245,197,24,0.05));border:1px solid rgba(245,197,24,0.25);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:none}
+.cart-upsell.show{display:block}
+.cart-upsell-title{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);letter-spacing:0.5px;margin-bottom:2px}
+.cart-upsell-sub{font-size:12px;color:rgba(245,197,24,0.65);line-height:1.4}
+.cart-items{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.cart-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px}
+.cart-item img{width:36px;height:54px;object-fit:cover;border-radius:4px;flex-shrink:0}
+.cart-item-info{flex:1;min-width:0}
+.cart-item-title{font-family:'Bebas Neue',sans-serif;font-size:15px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart-item-year{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.cart-item-price{font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--gold);flex-shrink:0}
+.cart-item-rm{background:transparent;border:none;color:var(--muted2);font-size:16px;cursor:pointer;padding:4px;flex-shrink:0}
+.cart-savings{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--green);text-align:center;padding:4px 0 10px;display:none}
+.cart-savings.show{display:block}
+.cart-totals{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cart-total-row:last-child{margin-bottom:0}
+.cart-total-label{font-size:13px;color:var(--muted)}.cart-total-val{font-family:'JetBrains Mono',monospace;font-size:13px}
+.cart-total-row.final .cart-total-label{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--text);letter-spacing:0.5px}
+.cart-total-row.final .cart-total-val{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold)}
+.cart-wa-btn{width:100%;background:#25D366;color:white;border:none;border-radius:10px;padding:16px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.cart-empty{text-align:center;padding:40px 0;color:var(--muted);font-size:14px}.cart-empty .icon{font-size:42px;margin-bottom:10px}
+.soon-view{display:none;padding:60px 24px;text-align:center}
+.soon-icon{font-size:52px;margin-bottom:14px}
+.soon-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--accent);margin-bottom:8px}
+.soon-sub{font-size:13px;color:var(--muted);line-height:1.7;max-width:260px;margin:0 auto 20px}
+.theme-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:all 0.2s}
+body.light{--bg:#f5f5f5;--surface:#ffffff;--card:#efefef;--border:#ddd;--gold:#b8860b;--gold-dim:#b8860b22;--text:#111;--muted:#888;--muted2:#bbb}
+body.light header,body.light .tabs,body.light .search-area{background:rgba(245,245,245,0.97)}
+body.light .hero{background:linear-gradient(135deg,#fff0f0 0%,#f5f5f5 60%);border-bottom-color:#ffd0d0}
+body.light .hero-sub{color:rgba(0,0,0,0.45)}
+body.light .modal-overview{color:rgba(0,0,0,0.55)}
+body.light .modal-rating{background:rgba(255,255,255,0.9)}
+body.light .tile-overlay{background:linear-gradient(transparent,rgba(0,0,0,0.88))}
+body.light .cart-overlay,body.light .modal-overlay{background:rgba(0,0,0,0.55)}
+.soon-hint{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.8px;line-height:1.6}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="logo">CINE<em>BOX</em></div>
-  <div class="badge">$10 por película</div>
+  <div class="logo">CINE<span>BOX</span></div>
+  <div style="display:flex;align-items:center;gap:8px"><button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button><button class="cart-icon-btn" id="cartIconBtn" onclick="openCartDrawer()">🛒<span class="cbadge" id="cartBadge">0</span></button></div>
 </header>
-
 <div class="tabs">
   <div class="tab active" id="tabCatalog" onclick="switchTab('catalog')">🎬 Catálogo</div>
-  <div class="tab" id="tabChat" onclick="switchTab('chat')">🤖 Recomiéndame</div>
+  <div class="tab dimmed" onclick="switchTab('chat')">🤖 Recomiéndame <span class="soon-pill">PRONTO</span></div>
 </div>
-
-<!-- ===== CATÁLOGO ===== -->
+<div class="hero" id="heroBanner">
+  <div class="hero-tag">🎬 Tu videoclub digital</div>
+  <div class="hero-title">Películas desde <span>$10</span></div>
+  <div class="hero-sub">Entregadas por Google Drive · Acceso por 1 año mínimo garantizado</div>
+  <div class="bundles-row">
+    <div class="bpill">🎬 3 por $25</div>
+    <div class="bpill">🎬 6 por $50</div>
+    <div class="bpill">🎬 12 por $100</div>
+  </div>
+</div>
 <div id="catalogView">
   <div class="search-area">
     <div class="search-row">
-      <input class="search-input" id="searchInput" placeholder="Buscar película o actor..." onkeydown="if(event.key==='Enter')searchMovies()">
-      <button class="search-btn" id="searchBtn" onclick="searchMovies()">BUSCAR</button>
+      <input class="search-input" id="searchInput" placeholder="🔍 Buscar película, actor, saga..." onkeydown="if(event.key==='Enter')searchMovies()">
+      <button class="search-btn" onclick="searchMovies()">IR</button>
     </div>
     <div class="genre-strip" id="genreStrip"></div>
   </div>
   <div class="count-bar" id="countBar"></div>
   <div class="movies-grid" id="moviesGrid"></div>
 </div>
-
-<!-- ===== CHAT ===== -->
-<div id="chatView">
-  <div class="chat-status"><span class="status-dot"></span> Asistente IA con búsqueda en vivo</div>
-  <div class="quick-chips" id="quickChips">
-    <span class="qchip" onclick="sendQuick('Quiero algo de terror reciente')">😱 Terror</span>
-    <span class="qchip" onclick="sendQuick('Recomiéndame acción con mucha adrenalina')">💥 Acción</span>
-    <span class="qchip" onclick="sendQuick('Algo familiar para ver con mis hijos')">👨‍👩‍👧 Familiar</span>
-    <span class="qchip" onclick="sendQuick('Algo romántico para ver en pareja')">❤️ Romance</span>
-    <span class="qchip" onclick="sendQuick('Una comedia para reírme')">😂 Comedia</span>
-    <span class="qchip" onclick="sendQuick('Algo de animación')">🎨 Animación</span>
-    <span class="qchip" onclick="sendQuick('Suspenso o thriller psicológico')">🔍 Suspenso</span>
-    <span class="qchip" onclick="sendQuick('Una película clásica de los 90s')">📼 Clásicos</span>
-  </div>
-  <div class="messages" id="messages"></div>
+<div class="soon-view" id="chatView">
+  <div class="soon-icon">🤖</div>
+  <div class="soon-title">Próximamente</div>
+  <p class="soon-sub">El asistente IA que recomienda películas según tu estado de ánimo estará disponible muy pronto.</p>
+  <div class="soon-hint">Mientras tanto usa los filtros del catálogo 👆</div>
 </div>
-
-<!-- Input fijo -->
-<div class="input-area" id="chatInputArea" style="display:none">
-  <div class="input-row">
-    <textarea class="input-box" id="inputBox" placeholder="¿Qué quieres ver hoy?" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
-  </div>
-</div>
-
-<!-- Modal detalle -->
-<div class="modal-overlay" id="movieModal" onclick="handleModalClick(event)">
-  <div class="modal" id="modalContent">
-    <img id="modalPoster" class="modal-poster" src="" alt="">
+<div class="modal-overlay" id="movieModal" onclick="handleModalBg(event)">
+  <div class="modal">
+    <div class="modal-poster-wrap">
+      <img id="modalPoster" class="modal-poster" src="" alt="" style="display:none">
+      <div class="modal-poster-gradient"></div>
+      <div class="modal-rating" id="modalRating" style="display:none">⭐ <span id="modalRatingVal"></span></div>
+    </div>
     <div class="modal-body">
       <div class="modal-title" id="modalTitle"></div>
       <div class="modal-meta" id="modalMeta"></div>
       <div class="modal-overview" id="modalOverview"></div>
-      <div class="modal-price">$10 pesos 🎬</div>
-      <button class="modal-add-cart" id="modalAddCartBtn" onclick="toggleCart()">+ Agregar al carrito</button>
-      <button class="modal-cta" id="modalCtaBtn" onclick="contactarWhatsApp()">¡La quiero! — WhatsApp</button>
-      <button class="modal-close" onclick="closeModal()">Cerrar</button>
+      <div class="modal-price-wrap">
+        <div class="modal-price-main">$10 <small>pesos</small></div>
+        <div class="modal-price-sub"><strong>✓ Acceso por 1 año mínimo garantizado</strong>Entrega por Google Drive</div>
+      </div>
+      <div class="upsell-hint" id="upsellHint"></div>
+      <button class="modal-btn-add" id="modalBtnAdd" onclick="toggleCart()">🛒 Agregar al carrito</button>
+      <button class="modal-btn-wa" onclick="pedirSoloEsta()">📲 Pedir solo esta — WhatsApp</button>
+      <button class="modal-btn-close" onclick="closeModal()">Cerrar</button>
     </div>
   </div>
 </div>
-
-<!-- CARRITO FAB -->
-<button class="cart-fab" id="cartFab" onclick="openCartDrawer()">
-  🛒 Mi carrito
-  <span class="cart-count" id="cartCount">0</span>
-</button>
-
-<!-- CARRITO DRAWER -->
 <div class="cart-drawer" id="cartDrawer">
   <div class="cart-overlay" onclick="closeCartDrawer()"></div>
   <div class="cart-panel">
-    <div class="cart-header">
-      <div class="cart-title">🛒 Mi pedido</div>
-      <button class="cart-close" onclick="closeCartDrawer()">✕</button>
+    <div class="cart-head">
+      <div class="cart-head-title">🛒 Mi pedido</div>
+      <button class="cart-x" onclick="closeCartDrawer()">✕</button>
     </div>
+    <div class="cart-upsell" id="cartUpsell"><div class="cart-upsell-title" id="cartUpsellTitle"></div><div class="cart-upsell-sub" id="cartUpsellSub"></div></div>
     <div class="cart-items" id="cartItems"></div>
-    <div class="cart-total">
-      <span class="cart-total-label">Total</span>
-      <span class="cart-total-amount" id="cartTotal">$0</span>
+    <div class="cart-savings" id="cartSavings"></div>
+    <div class="cart-totals" id="cartTotals" style="display:none">
+      <div class="cart-total-row"><span class="cart-total-label">Subtotal (<span id="cartQty">0</span> películas)</span><span class="cart-total-val" id="cartSubtotal"></span></div>
+      <div class="cart-total-row" id="cartDiscountRow" style="display:none"><span class="cart-total-label" style="color:var(--green)">Descuento bundle</span><span class="cart-total-val" style="color:var(--green)" id="cartDiscount"></span></div>
+      <div style="height:1px;background:var(--border);margin:10px 0"></div>
+      <div class="cart-total-row final"><span class="cart-total-label">TOTAL</span><span class="cart-total-val" id="cartTotal"></span></div>
     </div>
-    <button class="cart-wa-btn" onclick="enviarPedidoWA()">
-      <span>📲</span> Enviar pedido por WhatsApp
-    </button>
+    <button class="cart-wa-btn" id="cartWaBtn" onclick="enviarPedido()" style="display:none">📲 Enviar pedido por WhatsApp</button>
   </div>
 </div>
-
 <script>
-// ============================================================
-// CONFIG
-// ============================================================
-const TMDB_KEY = '0817c39b036216637adde13a29070d86';
-const TMDB_BASE = 'https://api.themoviedb.org/3';
-const IMG_BASE = 'https://image.tmdb.org/t/p/w500';
-const IMG_ORIGINAL = 'https://image.tmdb.org/t/p/w780';
-
-// Sin headers de Authorization — usamos api_key como query param (funciona sin servidor)
-const TMDB_HEADERS = {};
-
-// Géneros TMDB con emojis
-const GENRES = [
-  {id:28,name:'Acción',emoji:'💥'},
-  {id:35,name:'Comedia',emoji:'😂'},
-  {id:27,name:'Terror',emoji:'😱'},
-  {id:10749,name:'Romance',emoji:'❤️'},
-  {id:16,name:'Animación',emoji:'🎨'},
-  {id:878,name:'Sci-Fi',emoji:'🚀'},
-  {id:53,name:'Suspenso',emoji:'🔍'},
-  {id:18,name:'Drama',emoji:'🎭'},
-  {id:10751,name:'Familiar',emoji:'👨‍👩‍👧'},
-  {id:12,name:'Aventura',emoji:'🗺️'},
-];
-
-let currentGenre = null;
-let currentPage = 1;
-let isSearching = false;
-let chatHistory = [];
-let isChatLoading = false;
-let currentTab = 'catalog';
-
-// ============================================================
-// TABS
-// ============================================================
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('tabCatalog').classList.toggle('active', tab === 'catalog');
-  document.getElementById('tabChat').classList.toggle('active', tab === 'chat');
-  document.getElementById('catalogView').style.display = tab === 'catalog' ? 'block' : 'none';
-  document.getElementById('chatView').style.display = tab === 'chat' ? 'block' : 'none';
-  document.getElementById('chatInputArea').style.display = tab === 'chat' ? 'block' : 'none';
-
-  if (tab === 'chat' && chatHistory.length === 0) {
-    setTimeout(() => {
-      addMsg('ai', '¡Hola! 🎬 Cuéntame qué tipo de película quieres ver hoy y te busco opciones con póster y todo. Puedes usar los botones de arriba o escribirme directamente.');
-    }, 300);
-  }
-}
-
-// ============================================================
-// CATÁLOGO — TMDB
-// ============================================================
-function buildGenreStrip() {
-  const strip = document.getElementById('genreStrip');
-  const all = document.createElement('span');
-  all.className = 'gchip active';
-  all.textContent = 'Todos';
-  all.onclick = () => { currentGenre = null; setActiveGenre(all); loadPopular(); };
-  strip.appendChild(all);
-
-  GENRES.forEach(g => {
-    const chip = document.createElement('span');
-    chip.className = 'gchip';
-    chip.textContent = `${g.emoji} ${g.name}`;
-    chip.onclick = () => { currentGenre = g.id; setActiveGenre(chip); loadByGenre(g.id); };
-    strip.appendChild(chip);
-  });
-}
-
-function setActiveGenre(el) {
-  document.querySelectorAll('.gchip').forEach(c => c.classList.remove('active'));
-  el.classList.add('active');
-}
-
-function showSkeletons(n = 12) {
-  const grid = document.getElementById('moviesGrid');
-  grid.innerHTML = Array(n).fill('<div class="skeleton"></div>').join('');
-}
-
-async function loadPopular() {
-  showSkeletons();
-  document.getElementById('countBar').textContent = 'Cargando películas populares...';
-  try {
-    const res = await fetch(`${TMDB_BASE}/movie/popular?api_key=${TMDB_KEY}&language=es-MX&page=1&region=MX`);
-    const data = await res.json();
-    renderMovies(data.results);
-    document.getElementById('countBar').textContent = `${data.results.length} películas populares`;
-  } catch(e) {
-    document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error al cargar. Revisa tu conexión.</p></div>';
-  }
-}
-
-async function loadByGenre(genreId) {
-  showSkeletons();
-  try {
-    const res = await fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${genreId}&sort_by=popularity.desc&page=1`);
-    const data = await res.json();
-    renderMovies(data.results);
-    document.getElementById('countBar').textContent = `${data.results.length} películas encontradas`;
-  } catch(e) {
-    document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error al cargar.</p></div>';
-  }
-}
-
-async function searchMovies() {
-  const q = document.getElementById('searchInput').value.trim();
-  if (!q) { loadPopular(); return; }
-
-  document.getElementById('searchBtn').disabled = true;
-  showSkeletons(6);
-  document.getElementById('countBar').textContent = `Buscando "${q}"...`;
-
-  try {
-    const res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(q)}&page=1`);
-    const data = await res.json();
-    if (data.results.length === 0) {
-      document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">🎞️</div><p>No encontré esa película.<br>Intenta con otro nombre o pregúntale al asistente.</p></div>';
-      document.getElementById('countBar').textContent = '0 resultados';
-    } else {
-      renderMovies(data.results);
-      document.getElementById('countBar').textContent = `${data.results.length} resultados para "${q}"`;
-    }
-  } catch(e) {
-    document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error al buscar.</p></div>';
-  }
-
-  document.getElementById('searchBtn').disabled = false;
-}
-
-function renderMovies(movies) {
-  const grid = document.getElementById('moviesGrid');
-  grid.innerHTML = '';
-
-  movies.forEach((m, i) => {
-    const tile = document.createElement('div');
-    tile.className = 'movie-tile';
-    tile.style.animationDelay = `${i * 0.04}s`;
-    tile.onclick = () => openModal(m);
-
-    if (m.poster_path) {
-      tile.innerHTML = `
-        <img src="${IMG_BASE}${m.poster_path}" alt="${m.title}" loading="lazy">
-        <div class="tile-overlay">
-          <div class="tile-title">${m.title}</div>
-          <div class="tile-year">${m.release_date ? m.release_date.substring(0,4) : ''}</div>
-        </div>
-        <div class="tile-price">$10</div>
-      `;
-    } else {
-      tile.innerHTML = `
-        <div class="no-poster">🎬<span>${m.title}</span></div>
-        <div class="tile-price">$10</div>
-      `;
-    }
-
-    grid.appendChild(tile);
-  });
-}
-
-// ============================================================
-// CARRITO
-// ============================================================
-const WA_NUMBER = '5215661038481';
-let cart = []; // { id, title, year, poster_path }
-let currentMovie = null;
-
-function toggleCart() {
-  if (!currentMovie) return;
-  const exists = cart.find(m => m.id === currentMovie.id);
-  if (exists) {
-    cart = cart.filter(m => m.id !== currentMovie.id);
-  } else {
-    cart.push({
-      id: currentMovie.id,
-      title: currentMovie.title,
-      year: currentMovie.release_date ? currentMovie.release_date.substring(0,4) : '',
-      poster_path: currentMovie.poster_path
-    });
-  }
-  updateCartBtn();
-  updateCartFab();
-}
-
-function updateCartBtn() {
-  const btn = document.getElementById('modalAddCartBtn');
-  if (!btn || !currentMovie) return;
-  const inCart = cart.find(m => m.id === currentMovie.id);
-  btn.textContent = inCart ? '✓ En el carrito' : '+ Agregar al carrito';
-  btn.classList.toggle('added', !!inCart);
-}
-
-function updateCartFab() {
-  const fab = document.getElementById('cartFab');
-  const count = document.getElementById('cartCount');
-  count.textContent = cart.length;
-  fab.classList.toggle('visible', cart.length > 0);
-}
-
-function openCartDrawer() {
-  renderCartItems();
-  document.getElementById('cartDrawer').classList.add('open');
-}
-
-function closeCartDrawer() {
-  document.getElementById('cartDrawer').classList.remove('open');
-}
-
-function renderCartItems() {
-  const container = document.getElementById('cartItems');
-  const totalEl = document.getElementById('cartTotal');
-
-  if (cart.length === 0) {
-    container.innerHTML = '<div class="cart-empty"><div class="icon">🎬</div><p>Tu carrito está vacío.<br>Agrega películas desde el catálogo.</p></div>';
-    totalEl.textContent = '$0';
-    return;
-  }
-
-  container.innerHTML = '';
-  cart.forEach(m => {
-    const item = document.createElement('div');
-    item.className = 'cart-item';
-    const posterHTML = m.poster_path
-      ? `<img src="${IMG_BASE}${m.poster_path}" alt="${m.title}">`
-      : `<div style="width:40px;height:60px;background:#1a1a2e;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:18px">🎬</div>`;
-
-    item.innerHTML = `
-      ${posterHTML}
-      <div class="cart-item-info">
-        <div class="cart-item-title">${m.title}</div>
-        <div class="cart-item-year">${m.year} · $10 pesos</div>
-      </div>
-      <button class="cart-item-remove" onclick="removeFromCart(${m.id})">✕</button>
-    `;
-    container.appendChild(item);
-  });
-
-  totalEl.textContent = `$${cart.length * 10}`;
-}
-
-function removeFromCart(id) {
-  cart = cart.filter(m => m.id !== id);
-  updateCartFab();
-  renderCartItems();
-  updateCartBtn();
-}
-
-function enviarPedidoWA() {
-  if (cart.length === 0) return;
-  const lista = cart.map((m, i) => `${i+1}. ${m.title}${m.year ? ' (' + m.year + ')' : ''}`).join('\n');
-  const total = cart.length * 10;
-  const msg = encodeURIComponent(
-    `Hola! Vi tu catálogo de CineBox y quiero pedir:\n\n🎬 *PEDIDO*\n━━━━━━━━━━━━━━\n${lista}\n━━━━━━━━━━━━━━\nTotal: *$${total} pesos*\n\n¿Cómo procedo?`
-  );
-  window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
-}
-
-function contactarWhatsApp() {
-  if (!currentMovie) return;
-  cart = [{ id: currentMovie.id, title: currentMovie.title, year: currentMovie.release_date ? currentMovie.release_date.substring(0,4) : '', poster_path: currentMovie.poster_path }];
-  enviarPedidoWA();
-}
-
-// ============================================================
-// MODAL
-// ============================================================
-function openModal(movie) {
-  currentMovie = movie;
-  document.getElementById('modalTitle').textContent = movie.title;
-  const year = movie.release_date ? movie.release_date.substring(0,4) : '';
-  const rating = movie.vote_average ? `⭐ ${movie.vote_average.toFixed(1)}` : '';
-  document.getElementById('modalMeta').textContent = [year, rating].filter(Boolean).join(' · ');
-  document.getElementById('modalOverview').textContent = movie.overview || 'Sin descripción disponible.';
-
-  const poster = document.getElementById('modalPoster');
-  if (movie.poster_path) {
-    poster.src = `${IMG_ORIGINAL}${movie.poster_path}`;
-    poster.style.display = 'block';
-  } else {
-    poster.style.display = 'none';
-  }
-
-  updateCartBtn();
-  document.getElementById('movieModal').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('movieModal').classList.remove('open');
-}
-
-function handleModalClick(e) {
-  if (e.target === document.getElementById('movieModal')) closeModal();
-}
-
-// ============================================================
-// CHAT CON IA
-// ============================================================
-function addMsg(role, text, movies = []) {
-  const container = document.getElementById('messages');
-  const row = document.createElement('div');
-  row.className = `msg-row ${role}`;
-
-  const av = document.createElement('div');
-  av.className = `av ${role}`;
-  av.textContent = role === 'ai' ? '🎬' : '👤';
-
-  const bubble = document.createElement('div');
-  bubble.className = `bubble ${role}`;
-  bubble.innerHTML = text;
-
-  if (movies.length > 0) {
-    const grid = document.createElement('div');
-    grid.className = 'chat-results';
-
-    movies.forEach(m => {
-      const card = document.createElement('div');
-      card.className = 'chat-movie-card';
-      card.onclick = () => { openModal(m); };
-
-      const posterHTML = m.poster_path
-        ? `<img src="${IMG_BASE}${m.poster_path}" alt="${m.title}" loading="lazy">`
-        : `<div style="aspect-ratio:2/3;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:30px">🎬</div>`;
-
-      card.innerHTML = `
-        ${posterHTML}
-        <div class="chat-movie-info">
-          <div class="chat-movie-title">${m.title}</div>
-          <div class="chat-movie-meta">${m.release_date ? m.release_date.substring(0,4) : ''} · $10</div>
-        </div>
-      `;
-      grid.appendChild(card);
-    });
-
-    bubble.appendChild(grid);
-  }
-
-  row.appendChild(av);
-  row.appendChild(bubble);
-  container.appendChild(row);
-  window.scrollTo(0, document.body.scrollHeight);
-}
-
-function addLoading() {
-  const container = document.getElementById('messages');
-  const row = document.createElement('div');
-  row.className = 'msg-row ai';
-  row.id = 'loadingRow';
-  row.innerHTML = `<div class="av ai">🎬</div><div class="bubble loading">Buscando películas<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>`;
-  container.appendChild(row);
-  window.scrollTo(0, document.body.scrollHeight);
-}
-
-function removeLoading() {
-  const el = document.getElementById('loadingRow');
-  if (el) el.remove();
-}
-
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-}
-
-function sendQuick(text) {
-  switchTab('chat');
-  setTimeout(() => {
-    document.getElementById('inputBox').value = text;
-    sendMessage();
-  }, 100);
-}
-
-async function sendMessage() {
-  const input = document.getElementById('inputBox');
-  const text = input.value.trim();
-  if (!text || isChatLoading) return;
-
-  document.getElementById('quickChips').style.display = 'none';
-  input.value = '';
-  input.style.height = 'auto';
-  isChatLoading = true;
-  document.getElementById('sendBtn').disabled = true;
-
-  addMsg('user', text);
-  chatHistory.push({ role: 'user', content: text });
-  addLoading();
-
-  // Primero: pedir a Claude qué buscar en TMDB
-  const systemPrompt = `Eres el asistente de CineBox, un videoclub digital en México donde las películas cuestan $10 pesos y se entregan por Google Drive.
-
-El cliente te dice qué quiere ver. Tu trabajo es:
-1. Entender su petición (género, estado de ánimo, actor, saga, año, etc.)
-2. Decidir qué buscar en TMDB para encontrar esas películas
-3. Responder en JSON exacto sin markdown:
-
-{
-  "message": "respuesta breve y amigable al cliente (1-2 oraciones)",
-  "search_query": "término en inglés para buscar en TMDB (ej: horror, action comedy, tom hanks, 1990s thriller)",
-  "genre_id": null,
-  "followUp": "pregunta de seguimiento si aplica o null"
-}
-
-Si el cliente pide un género específico, usa genre_id (acción=28, comedia=35, terror=27, romance=10749, animación=16, sci-fi=878, suspenso=53, drama=18, familiar=10751).
-Si pide por actor o título, usa search_query.
-Si solo saluda, devuelve search_query como null y genre_id como null.
-Responde siempre en español mexicano casual.`;
-
-  try {
-    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        system: systemPrompt,
-        messages: chatHistory
-      })
-    });
-
-    const aiData = await aiRes.json();
-    const rawText = aiData.content?.[0]?.text || '';
-
-    let parsed = null;
-    try {
-      const match = rawText.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-    } catch(e) {}
-
-    let movies = [];
-
-    // Buscar en TMDB con los parámetros que dio Claude
-    if (parsed) {
-      try {
-        let tmdbUrl = '';
-        if (parsed.search_query) {
-            tmdbUrl = `${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(parsed.search_query)}&page=1`;
-          } else if (parsed.genre_id) {
-            tmdbUrl = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${parsed.genre_id}&sort_by=popularity.desc&page=1`;
-          }
-
-          if (tmdbUrl) {
-            const tmdbRes = await fetch(tmdbUrl);
-          const tmdbData = await tmdbRes.json();
-          movies = (tmdbData.results || []).slice(0, 4);
-        }
-      } catch(e) { movies = []; }
-    }
-
-    removeLoading();
-
-    chatHistory.push({ role: 'assistant', content: rawText });
-
-    let msgText = parsed?.message || 'Aquí te va lo que encontré:';
-    if (parsed?.followUp) msgText += `<br><br><em style="color:var(--muted);font-size:12px">${parsed.followUp}</em>`;
-
-    addMsg('ai', msgText, movies);
-
-  } catch(err) {
-    removeLoading();
-    addMsg('ai', 'Tuve un problema conectándome. Intenta de nuevo 🙏');
-  }
-
-  isChatLoading = false;
-  document.getElementById('sendBtn').disabled = false;
-}
-
-// ============================================================
-// INIT
-// ============================================================
-buildGenreStrip();
-loadPopular();
+const TMDB_KEY='0817c39b036216637adde13a29070d86';
+const TMDB_BASE='https://api.themoviedb.org/3';
+const IMG_W='https://image.tmdb.org/t/p/w500';
+const IMG_H='https://image.tmdb.org/t/p/w780';
+const WA='5215661038481';
+const BUNDLES=[{qty:3,price:25,save:5},{qty:6,price:50,save:10},{qty:12,price:100,save:20}];
+const GENRES=[{id:0,name:'⭐ Top Rated'},{id:28,name:'💥 Acción'},{id:35,name:'😂 Comedia'},{id:27,name:'😱 Terror'},{id:10749,name:'❤️ Romance'},{id:16,name:'🎨 Animación'},{id:878,name:'🚀 Sci-Fi'},{id:53,name:'🔍 Suspenso'},{id:18,name:'🎭 Drama'},{id:10751,name:'👨‍👩‍👧 Familiar'},{id:12,name:'🗺️ Aventura'}];
+let cart=[],currentMovie=null;
+function calcTotal(qty){const b=[...BUNDLES].reverse().find(b=>qty>=b.qty);if(!b)return{total:qty*10,discount:0,bundle:null};const s=Math.floor(qty/b.qty),l=qty%b.qty;return{total:s*b.price+l*10,discount:qty*10-(s*b.price+l*10),bundle:b};}
+function switchTab(t){document.getElementById('tabCatalog').classList.toggle('active',t==='catalog');document.getElementById('catalogView').style.display=t==='catalog'?'block':'none';document.getElementById('heroBanner').style.display=t==='catalog'?'block':'none';document.getElementById('chatView').style.display=t==='chat'?'block':'none';}
+function buildGenreStrip(){const strip=document.getElementById('genreStrip');GENRES.forEach((g,i)=>{const c=document.createElement('span');c.className='gchip'+(i===0?' active':'');c.textContent=g.name;c.onclick=()=>{setActiveGenre(c);g.id===0?loadPopular():loadByGenre(g.id);};strip.appendChild(c);});}
+function setActiveGenre(el){document.querySelectorAll('.gchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');}
+function showSkeletons(n=12){document.getElementById('moviesGrid').innerHTML=Array(n).fill('<div class="skeleton"></div>').join('');}
+async function loadPopular(){showSkeletons();document.getElementById('countBar').textContent='Cargando...';try{const r=await fetch(`${TMDB_BASE}/movie/top_rated?api_key=${TMDB_KEY}&language=es-MX&page=1`);const d=await r.json();renderMovies(d.results,true);document.getElementById('countBar').textContent=`Las ${d.results.length} mejor calificadas de todos los tiempos`;}catch(e){document.getElementById('moviesGrid').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Sin conexión.</p></div>';}}
+async function loadByGenre(id){showSkeletons();try{const r=await fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${id}&sort_by=vote_average.desc&vote_count.gte=1000&page=1`);const d=await r.json();renderMovies(d.results,false);document.getElementById('countBar').textContent=`Las ${d.results.length} mejor calificadas del género`;}catch(e){}}
+async function searchMovies(){const q=document.getElementById('searchInput').value.trim();if(!q){loadPopular();return;}showSkeletons(6);document.getElementById('countBar').textContent='Buscando...';try{const r=await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(q)}&page=1`);const d=await r.json();if(!d.results.length){document.getElementById('moviesGrid').innerHTML='<div class="empty-state"><div class="icon">🎞️</div><p>No encontré esa película.</p></div>';document.getElementById('countBar').textContent='0 resultados';}else{renderMovies(d.results,false);document.getElementById('countBar').textContent=`${d.results.length} resultados`;}}catch(e){}}
+function renderMovies(movies,showBadges){const grid=document.getElementById('moviesGrid');grid.innerHTML='';movies.forEach((m,i)=>{const inCart=cart.find(c=>c.id===m.id);const isNew=m.release_date&&m.release_date>'2025-01-01';const isHot=showBadges&&i<5;const tile=document.createElement('div');tile.className='movie-tile';tile.style.animationDelay=`${i*0.035}s`;tile.onclick=()=>openModal(m);let badge=isHot?'<div class="tile-badge hot">⭐ TOP</div>':(isNew?'<div class="tile-badge nbadge">NUEVO</div>':'');const cm=inCart?'<div class="tile-in-cart"></div>':'';if(m.poster_path){tile.innerHTML=`<img src="${IMG_W}${m.poster_path}" alt="${m.title}" loading="lazy"><div class="tile-overlay"><div class="tile-title">${m.title}</div><div class="tile-year">${m.release_date?m.release_date.substring(0,4):''}</div></div>${badge}<div class="tile-price">$10</div>${cm}`;}else{tile.innerHTML=`<div class="no-poster">🎬</div><div class="tile-price">$10</div>${cm}`;}grid.appendChild(tile);});}
+function openModal(movie){currentMovie=movie;history.pushState({modal:true},'');document.getElementById('modalTitle').textContent=movie.title;document.getElementById('modalMeta').textContent=movie.release_date?movie.release_date.substring(0,4):'';document.getElementById('modalOverview').textContent=movie.overview||'Sin descripción disponible.';const p=document.getElementById('modalPoster');if(movie.poster_path){p.src=`${IMG_H}${movie.poster_path}`;p.style.display='block';}else p.style.display='none';const rEl=document.getElementById('modalRating');if(movie.vote_average>0){document.getElementById('modalRatingVal').textContent=movie.vote_average.toFixed(1);rEl.style.display='flex';}else rEl.style.display='none';updateModalBtn();updateUpsellHint();document.getElementById('movieModal').classList.add('open');}
+function closeModal(){document.getElementById('movieModal').classList.remove('open');currentMovie=null;}
+function handleModalBg(e){if(e.target===document.getElementById('movieModal'))closeModal();}
+window.addEventListener('popstate',()=>{if(document.getElementById('movieModal').classList.contains('open'))closeModal();else if(document.getElementById('cartDrawer').classList.contains('open'))closeCartDrawer();});
+function updateModalBtn(){const btn=document.getElementById('modalBtnAdd');if(!currentMovie)return;const inCart=cart.find(c=>c.id===currentMovie.id);btn.textContent=inCart?'✓ En el carrito — Quitar':'🛒 Agregar al carrito';btn.classList.toggle('in-cart',!!inCart);}
+function updateUpsellHint(){const hint=document.getElementById('upsellHint');const next=BUNDLES.find(b=>cart.length<b.qty&&(b.qty-cart.length)<=2);if(next){hint.textContent=`💡 Agrega ${next.qty-cart.length} más y paga solo $${next.price} en total`;hint.classList.add('show');}else hint.classList.remove('show');}
+function toggleCart(){if(!currentMovie)return;const exists=cart.find(c=>c.id===currentMovie.id);if(exists)cart=cart.filter(c=>c.id!==currentMovie.id);else cart.push({id:currentMovie.id,title:currentMovie.title,year:currentMovie.release_date?currentMovie.release_date.substring(0,4):'',poster_path:currentMovie.poster_path});updateModalBtn();updateUpsellHint();updateCartIcon();refreshGridMarks();}
+function updateCartIcon(){const btn=document.getElementById('cartIconBtn');document.getElementById('cartBadge').textContent=cart.length;btn.classList.toggle('has-items',cart.length>0);btn.style.transform='scale(1.3)';setTimeout(()=>btn.style.transform='',200);}
+function refreshGridMarks(){document.querySelectorAll('.movie-tile').forEach(tile=>{tile.querySelectorAll('.tile-in-cart').forEach(e=>e.remove());const t=tile.querySelector('.tile-title');if(t&&cart.find(c=>c.title===t.textContent)){const m=document.createElement('div');m.className='tile-in-cart';tile.appendChild(m);}});}
+function openCartDrawer(){history.pushState({cart:true},'');renderCart();document.getElementById('cartDrawer').classList.add('open');}
+function closeCartDrawer(){document.getElementById('cartDrawer').classList.remove('open');}
+function renderCart(){const container=document.getElementById('cartItems'),totalsEl=document.getElementById('cartTotals'),waBtn=document.getElementById('cartWaBtn'),savingsEl=document.getElementById('cartSavings'),upsell=document.getElementById('cartUpsell');if(!cart.length){container.innerHTML='<div class="cart-empty"><div class="icon">🎬</div><p>Tu carrito está vacío.<br>Agrega películas del catálogo.</p></div>';totalsEl.style.display='none';waBtn.style.display='none';savingsEl.classList.remove('show');upsell.classList.remove('show');return;}container.innerHTML='';cart.forEach(m=>{const item=document.createElement('div');item.className='cart-item';const ph=m.poster_path?`<img src="${IMG_W}${m.poster_path}" alt="${m.title}">`:'<div style="width:36px;height:54px;background:var(--surface);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px">🎬</div>';item.innerHTML=`${ph}<div class="cart-item-info"><div class="cart-item-title">${m.title}</div><div class="cart-item-year">${m.year}</div></div><div class="cart-item-price">$10</div><button class="cart-item-rm" onclick="removeFromCart(${m.id})">✕</button>`;container.appendChild(item);});const qty=cart.length,{total,discount,bundle}=calcTotal(qty);document.getElementById('cartQty').textContent=qty;document.getElementById('cartSubtotal').textContent=`$${qty*10}`;document.getElementById('cartTotal').textContent=`$${total}`;const dr=document.getElementById('cartDiscountRow');if(discount>0){document.getElementById('cartDiscount').textContent=`-$${discount}`;dr.style.display='flex';savingsEl.textContent=`🎉 ¡Ahorraste $${discount} con el bundle de ${bundle.qty} películas!`;savingsEl.classList.add('show');}else{dr.style.display='none';savingsEl.classList.remove('show');}totalsEl.style.display='block';waBtn.style.display='flex';const next=BUNDLES.find(b=>qty<b.qty);if(next){document.getElementById('cartUpsellTitle').textContent=`¡Agrega ${next.qty-qty} más y paga solo $${next.price}!`;document.getElementById('cartUpsellSub').textContent=`Bundle ${next.qty} películas — ahorras $${next.qty*10-next.price} pesos`;upsell.classList.add('show');}else upsell.classList.remove('show');}
+function removeFromCart(id){cart=cart.filter(c=>c.id!==id);updateCartIcon();renderCart();refreshGridMarks();if(currentMovie){updateModalBtn();updateUpsellHint();}}
+function buildMsg(items){const qty=items.length,{total,discount,bundle}=calcTotal(qty);const lista=items.map(m=>`🎬 ${m.title}${m.year?' ('+m.year+')':''}`).join('\n');let msg=`Hola! Quiero pedir en CineBox:\n\n${lista}\n\n*Total: $${total} pesos*`;if(discount>0)msg+=` ✨ bundle ${bundle.qty}×$${bundle.price}`;return encodeURIComponent(msg);}
+function enviarPedido(){if(cart.length)window.open(`https://wa.me/${WA}?text=${buildMsg(cart)}`,'_blank');}
+function pedirSoloEsta(){if(!currentMovie)return;window.open(`https://wa.me/${WA}?text=${buildMsg([{id:currentMovie.id,title:currentMovie.title,year:currentMovie.release_date?currentMovie.release_date.substring(0,4):''}])}`,'_blank');}
+buildGenreStrip();loadPopular();
+function toggleTheme(){const isDark=!document.body.classList.contains("light");document.body.classList.toggle("light",isDark);document.getElementById("themeBtn").textContent=isDark?"☀️":"🌙";localStorage.setItem("theme",isDark?"light":"dark");}
+const saved=localStorage.getItem("theme");if(saved==="light"){document.body.classList.add("light");document.getElementById("themeBtn").textContent="☀️";}
 </script>
 </body>
 </html>
