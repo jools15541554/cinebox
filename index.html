@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CineBox — Películas a $10</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;
+  --surface: #10101c;
+  --border: #ffffff12;
+  --border-bright: #ffffff22;
+  --accent: #e8ff47;
+  --accent2: #ff6b35;
+  --text: #f0f0fa;
+  --muted: #5a5a72;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Sora', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content:'';
+  position: fixed;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232,255,71,0.05) 0%, transparent 70%);
+  top: -150px; right: -150px;
+  pointer-events: none;
+  z-index: 0;
+  animation: bgpulse 8s ease-in-out infinite;
+}
+@keyframes bgpulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+/* HEADER */
+header {
+  padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0;
+  background: rgba(8,8,16,0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+.logo { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:4px; color:var(--accent); }
+.logo em { color:var(--text); opacity:0.4; font-style:normal; }
+.badge { background:var(--accent); color:#080810; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; padding:5px 13px; border-radius:20px; }
+
+/* TABS */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 57px;
+  background: rgba(8,8,16,0.96);
+  backdrop-filter: blur(16px);
+  z-index: 99;
+}
+.tab {
+  flex: 1; padding: 13px; text-align: center;
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  text-transform:uppercase; letter-spacing:1px;
+  color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* VIEWS */
+#catalogView { display:block; }
+#chatView { display:none; padding: 16px 16px 130px; }
+
+/* SEARCH */
+.search-area {
+  padding: 14px 16px 10px;
+  position: sticky; top: 103px;
+  background: rgba(8,8,16,0.96);
+  backdrop-filter: blur(12px);
+  z-index: 98;
+}
+.search-row { display:flex; gap:8px; margin-bottom:10px; }
+.search-input {
+  flex:1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-bright);
+  border-radius: 24px;
+  padding: 11px 18px;
+  color: var(--text);
+  font-family:'Sora',sans-serif; font-size:14px;
+  outline: none; transition: border-color 0.2s;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--muted); }
+.search-btn {
+  background: var(--accent); color:#080810;
+  border:none; border-radius:24px;
+  padding: 11px 16px;
+  font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600;
+  cursor:pointer; white-space:nowrap; transition: opacity 0.2s;
+}
+.search-btn:disabled { opacity:0.4; }
+
+.genre-strip { display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
+.genre-strip::-webkit-scrollbar { display:none; }
+.gchip {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-bright);
+  color: var(--muted);
+  padding: 6px 13px;
+  border-radius:20px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  text-transform:uppercase; letter-spacing:0.5px;
+  white-space:nowrap; cursor:pointer; flex-shrink:0;
+  transition: all 0.2s;
+}
+.gchip.active, .gchip:hover { background:rgba(232,255,71,0.12); border-color:var(--accent); color:var(--accent); }
+
+.count-bar { padding: 8px 16px 6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+/* GRID */
+.movies-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 4px 12px 130px;
+}
+
+.movie-tile {
+  position:relative; border-radius:8px; overflow:hidden;
+  cursor:pointer; aspect-ratio:2/3;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform 0.2s, border-color 0.2s;
+  animation: fadeUp 0.3s ease both;
+}
+.movie-tile:active { transform: scale(0.97); }
+.movie-tile:hover { border-color: var(--accent); }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+.movie-tile img { width:100%; height:100%; object-fit:cover; display:block; }
+
+.tile-overlay {
+  position:absolute; bottom:0; left:0; right:0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.92));
+  padding: 22px 6px 7px;
+}
+.tile-title { font-family:'Bebas Neue',sans-serif; font-size:13px; color:white; line-height:1.1; }
+.tile-year { font-family:'JetBrains Mono',monospace; font-size:9px; color:rgba(255,255,255,0.45); margin-top:1px; }
+.tile-price {
+  position:absolute; top:5px; right:5px;
+  background:var(--accent); color:#080810;
+  font-family:'Bebas Neue',sans-serif; font-size:13px;
+  padding:2px 6px; border-radius:4px;
+}
+
+.no-poster {
+  width:100%; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:6px; font-size:26px; color:var(--muted);
+  background: linear-gradient(135deg,#1a1a2e,#16213e);
+}
+.no-poster span { font-family:'JetBrains Mono',monospace; font-size:9px; text-transform:uppercase; }
+
+.skeleton { background:linear-gradient(90deg,var(--surface) 25%,#1e1e30 50%,var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.5s infinite; border-radius:8px; aspect-ratio:2/3; }
+@keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+.empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--muted); }
+.empty-state .icon { font-size:48px; margin-bottom:12px; }
+.empty-state p { font-size:13px; line-height:1.6; }
+
+/* CHAT */
+.chat-status {
+  display:flex; align-items:center; gap:7px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  color:var(--muted); text-transform:uppercase; letter-spacing:1px;
+  margin-bottom:14px;
+}
+.status-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pdot 2s ease infinite; }
+@keyframes pdot { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.quick-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+.qchip {
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border-bright);
+  color:var(--muted);
+  padding:7px 13px; border-radius:20px;
+  font-family:'JetBrains Mono',monospace; font-size:10px;
+  text-transform:uppercase; letter-spacing:0.5px;
+  cursor:pointer; transition:all 0.2s;
+}
+.qchip:hover { background:rgba(232,255,71,0.1); border-color:var(--accent); color:var(--accent); }
+
+.messages { display:flex; flex-direction:column; gap:14px; }
+
+.msg-row { display:flex; gap:10px; animation:fadeUp 0.3s ease both; }
+.msg-row.user { flex-direction:row-reverse; }
+
+.av { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; margin-top:2px; }
+.av.ai { background:var(--accent); color:#080810; }
+.av.user { background:var(--accent2); color:white; }
+
+.bubble { max-width:84%; padding:12px 15px; border-radius:16px; font-size:14px; line-height:1.55; }
+.bubble.ai { background:rgba(255,255,255,0.05); border:1px solid var(--border-bright); border-top-left-radius:4px; }
+.bubble.user { background:var(--accent2); color:white; border-bottom-right-radius:4px; }
+.bubble.loading { background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:12px; }
+
+.dots span { animation:blink 1.4s infinite; display:inline-block; }
+.dots span:nth-child(2){animation-delay:0.2s} .dots span:nth-child(3){animation-delay:0.4s}
+@keyframes blink{0%,80%,100%{opacity:0.2}40%{opacity:1}}
+
+.chat-results { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px; }
+.chat-movie-card { background:rgba(255,255,255,0.04); border:1px solid var(--border-bright); border-radius:10px; overflow:hidden; cursor:pointer; transition:all 0.2s; }
+.chat-movie-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+.chat-movie-card img { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; }
+.chat-movie-info { padding:7px 8px; }
+.chat-movie-title { font-family:'Bebas Neue',sans-serif; font-size:13px; color:var(--accent); line-height:1.1; margin-bottom:2px; }
+.chat-movie-meta { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted); text-transform:uppercase; }
+
+/* INPUT FIJO */
+.input-area {
+  position:fixed; bottom:0; left:0; right:0;
+  padding:12px 16px 20px;
+  background:rgba(8,8,16,0.97);
+  backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  z-index:100;
+}
+.input-row { display:flex; gap:10px; align-items:flex-end; }
+.input-box {
+  flex:1;
+  background:rgba(255,255,255,0.06);
+  border:1px solid var(--border-bright);
+  border-radius:24px;
+  padding:13px 18px;
+  color:var(--text);
+  font-family:'Sora',sans-serif; font-size:14px;
+  outline:none; resize:none;
+  transition:border-color 0.2s;
+  max-height:100px; scrollbar-width:none;
+}
+.input-box:focus { border-color:var(--accent); }
+.input-box::placeholder { color:var(--muted); }
+.send-btn {
+  width:46px; height:46px;
+  background:var(--accent); color:#080810;
+  border:none; border-radius:50%;
+  font-size:18px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; transition:transform 0.2s, opacity 0.2s;
+}
+.send-btn:hover{transform:scale(1.08)} .send-btn:disabled{opacity:0.3;cursor:not-allowed;transform:none}
+
+/* MODAL */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:500; display:none; align-items:flex-end; }
+.modal-overlay.open { display:flex; }
+.modal { width:100%; background:#12121e; border:1px solid var(--border-bright); border-radius:20px 20px 0 0; overflow:hidden; animation:slideUp 0.3s ease; max-height:90vh; overflow-y:auto; scrollbar-width:none; }
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-poster { width:100%; max-height:52vw; object-fit:cover; object-position:center 20%; display:block; }
+.modal-body { padding:20px 20px 30px; }
+.modal-title { font-family:'Bebas Neue',sans-serif; font-size:30px; letter-spacing:1px; margin-bottom:4px; }
+.modal-meta { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:14px; }
+.modal-overview { font-size:14px; color:rgba(240,240,250,0.65); line-height:1.65; margin-bottom:20px; }
+.modal-price { font-family:'Bebas Neue',sans-serif; font-size:38px; color:var(--accent2); margin-bottom:16px; }
+.modal-cta { width:100%; background:var(--accent); color:#080810; border:none; border-radius:12px; padding:14px; font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; cursor:pointer; margin-bottom:8px; transition:opacity 0.2s; }
+.modal-cta:hover{opacity:0.9}
+.modal-add-cart { width:100%; background:rgba(232,255,71,0.12); border:1px solid var(--accent); color:var(--accent); border-radius:12px; padding:13px; font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; cursor:pointer; margin-bottom:8px; transition:all 0.2s; }
+.modal-add-cart:hover { background:rgba(232,255,71,0.2); }
+.modal-add-cart.added { background:var(--accent); color:#080810; }
+.modal-close { width:100%; background:transparent; border:1px solid var(--border-bright); color:var(--muted); border-radius:12px; padding:12px; font-family:'Sora',sans-serif; font-size:13px; cursor:pointer; }
+
+/* CARRITO FAB */
+.cart-fab {
+  position: fixed;
+  bottom: 28px; right: 20px;
+  background: var(--accent);
+  color: #080810;
+  border: none;
+  border-radius: 50px;
+  padding: 13px 20px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 24px rgba(232,255,71,0.3);
+  z-index: 200;
+  transition: transform 0.2s;
+}
+.cart-fab:hover { transform: scale(1.04); }
+.cart-fab.visible { display: flex; }
+
+.cart-count {
+  background: #080810;
+  color: var(--accent);
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* CARRITO DRAWER */
+.cart-drawer {
+  position: fixed; inset: 0;
+  z-index: 600;
+  display: none;
+}
+.cart-drawer.open { display: block; }
+
+.cart-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.85);
+}
+
+.cart-panel {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: #12121e;
+  border: 1px solid var(--border-bright);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 30px;
+  max-height: 85vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.cart-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.cart-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px; letter-spacing: 1px;
+  color: var(--accent);
+}
+
+.cart-close {
+  background: var(--border-bright); border: none; color: var(--text);
+  width: 30px; height: 30px; border-radius: 50%;
+  cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.cart-items { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+
+.cart-item {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.cart-item img {
+  width: 40px; height: 60px;
+  object-fit: cover; border-radius: 5px; flex-shrink: 0;
+}
+
+.cart-item-info { flex: 1; min-width: 0; }
+.cart-item-title { font-family:'Bebas Neue',sans-serif; font-size:16px; color:var(--text); line-height:1.1; }
+.cart-item-year { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); margin-top:2px; }
+
+.cart-item-remove {
+  background: transparent; border: none;
+  color: var(--muted); font-size: 18px; cursor: pointer;
+  padding: 4px; flex-shrink: 0;
+  transition: color 0.2s;
+}
+.cart-item-remove:hover { color: var(--accent2); }
+
+.cart-total {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.cart-total-label { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+.cart-total-amount { font-family:'Bebas Neue',sans-serif; font-size:28px; color:var(--accent2); }
+
+.cart-wa-btn {
+  width: 100%;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 15px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: opacity 0.2s;
+}
+.cart-wa-btn:hover { opacity: 0.9; }
+
+.cart-empty {
+  text-align: center; padding: 40px 20px;
+  color: var(--muted); font-size: 13px;
+}
+.cart-empty .icon { font-size: 40px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CINE<em>BOX</em></div>
+  <div class="badge">$10 por película</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" id="tabCatalog" onclick="switchTab('catalog')">🎬 Catálogo</div>
+  <div class="tab" id="tabChat" onclick="switchTab('chat')">🤖 Recomiéndame</div>
+</div>
+
+<!-- ===== CATÁLOGO ===== -->
+<div id="catalogView">
+  <div class="search-area">
+    <div class="search-row">
+      <input class="search-input" id="searchInput" placeholder="Buscar película o actor..." onkeydown="if(event.key==='Enter')searchMovies()">
+      <button class="search-btn" id="searchBtn" onclick="searchMovies()">BUSCAR</button>
+    </div>
+    <div class="genre-strip" id="genreStrip"></div>
+  </div>
+  <div class="count-bar" id="countBar"></div>
+  <div class="movies-grid" id="moviesGrid"></div>
+</div>
+
+<!-- ===== CHAT ===== -->
+<div id="chatView">
+  <div class="chat-status"><span class="status-dot"></span> Asistente IA con búsqueda en vivo</div>
+  <div class="quick-chips" id="quickChips">
+    <span class="qchip" onclick="sendQuick('Quiero algo de terror reciente')">😱 Terror</span>
+    <span class="qchip" onclick="sendQuick('Recomiéndame acción con mucha adrenalina')">💥 Acción</span>
+    <span class="qchip" onclick="sendQuick('Algo familiar para ver con mis hijos')">👨‍👩‍👧 Familiar</span>
+    <span class="qchip" onclick="sendQuick('Algo romántico para ver en pareja')">❤️ Romance</span>
+    <span class="qchip" onclick="sendQuick('Una comedia para reírme')">😂 Comedia</span>
+    <span class="qchip" onclick="sendQuick('Algo de animación')">🎨 Animación</span>
+    <span class="qchip" onclick="sendQuick('Suspenso o thriller psicológico')">🔍 Suspenso</span>
+    <span class="qchip" onclick="sendQuick('Una película clásica de los 90s')">📼 Clásicos</span>
+  </div>
+  <div class="messages" id="messages"></div>
+</div>
+
+<!-- Input fijo -->
+<div class="input-area" id="chatInputArea" style="display:none">
+  <div class="input-row">
+    <textarea class="input-box" id="inputBox" placeholder="¿Qué quieres ver hoy?" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<!-- Modal detalle -->
+<div class="modal-overlay" id="movieModal" onclick="handleModalClick(event)">
+  <div class="modal" id="modalContent">
+    <img id="modalPoster" class="modal-poster" src="" alt="">
+    <div class="modal-body">
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-meta" id="modalMeta"></div>
+      <div class="modal-overview" id="modalOverview"></div>
+      <div class="modal-price">$10 pesos 🎬</div>
+      <button class="modal-add-cart" id="modalAddCartBtn" onclick="toggleCart()">+ Agregar al carrito</button>
+      <button class="modal-cta" id="modalCtaBtn" onclick="contactarWhatsApp()">¡La quiero! — WhatsApp</button>
+      <button class="modal-close" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CARRITO FAB -->
+<button class="cart-fab" id="cartFab" onclick="openCartDrawer()">
+  🛒 Mi carrito
+  <span class="cart-count" id="cartCount">0</span>
+</button>
+
+<!-- CARRITO DRAWER -->
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-overlay" onclick="closeCartDrawer()"></div>
+  <div class="cart-panel">
+    <div class="cart-header">
+      <div class="cart-title">🛒 Mi pedido</div>
+      <button class="cart-close" onclick="closeCartDrawer()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-total">
+      <span class="cart-total-label">Total</span>
+      <span class="cart-total-amount" id="cartTotal">$0</span>
+    </div>
+    <button class="cart-wa-btn" onclick="enviarPedidoWA()">
+      <span>📲</span> Enviar pedido por WhatsApp
+    </button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const TMDB_KEY = '0817c39b036216637adde13a29070d86';
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const IMG_BASE = 'https://image.tmdb.org/t/p/w500';
+const IMG_ORIGINAL = 'https://image.tmdb.org/t/p/w780';
+
+// Sin headers de Authorization — usamos api_key como query param (funciona sin servidor)
+const TMDB_HEADERS = {};
+
+// Géneros TMDB con emojis
+const GENRES = [
+  {id:28,name:'Acción',emoji:'💥'},
+  {id:35,name:'Comedia',emoji:'😂'},
+  {id:27,name:'Terror',emoji:'😱'},
+  {id:10749,name:'Romance',emoji:'❤️'},
+  {id:16,name:'Animación',emoji:'🎨'},
+  {id:878,name:'Sci-Fi',emoji:'🚀'},
+  {id:53,name:'Suspenso',emoji:'🔍'},
+  {id:18,name:'Drama',emoji:'🎭'},
+  {id:10751,name:'Familiar',emoji:'👨‍👩‍👧'},
+  {id:12,name:'Aventura',emoji:'🗺️'},
+];
+
+let currentGenre = null;
+let currentPage = 1;
+let isSearching = false;
+let chatHistory = [];
+let isChatLoading = false;
+let currentTab = 'catalog';
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabCatalog').classList.toggle('active', tab === 'catalog');
+  document.getElementById('tabChat').classList.toggle('active', tab === 'chat');
+  document.getElementById('catalogView').style.display = tab === 'catalog' ? 'block' : 'none';
+  document.getElementById('chatView').style.display = tab === 'chat' ? 'block' : 'none';
+  document.getElementById('chatInputArea').style.display = tab === 'chat' ? 'block' : 'none';
+
+  if (tab === 'chat' && chatHistory.length === 0) {
+    setTimeout(() => {
+      addMsg('ai', '¡Hola! 🎬 Cuéntame qué tipo de película quieres ver hoy y te busco opciones con póster y todo. Puedes usar los botones de arriba o escribirme directamente.');
+    }, 300);
+  }
+}
+
+// ============================================================
+// CATÁLOGO — TMDB
+// ============================================================
+function buildGenreStrip() {
+  const strip = document.getElementById('genreStrip');
+  const all = document.createElement('span');
+  all.className = 'gchip active';
+  all.textContent = 'Todos';
+  all.onclick = () => { currentGenre = null; setActiveGenre(all); loadPopular(); };
+  strip.appendChild(all);
+
+  GENRES.forEach(g => {
+    const chip = document.createElement('span');
+    chip.className = 'gchip';
+    chip.textContent = `${g.emoji} ${g.name}`;
+    chip.onclick = () => { currentGenre = g.id; setActiveGenre(chip); loadByGenre(g.id); };
+    strip.appendChild(chip);
+  });
+}
+
+function setActiveGenre(el) {
+  document.querySelectorAll('.gchip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function showSkeletons(n = 12) {
+  const grid = document.getElementById('moviesGrid');
+  grid.innerHTML = Array(n).fill('<div class="skeleton"></div>').join('');
+}
+
+async function loadPopular() {
+  showSkeletons();
+  document.getElementById('countBar').textContent = 'Cargando películas populares...';
+  try {
+    const res = await fetch(`${TMDB_BASE}/movie/popular?api_key=${TMDB_KEY}&language=es-MX&page=1&region=MX`);
+    const data = await res.json();
+    renderMovies(data.results);
+    document.getElementById('countBar').textContent = `${data.results.length} películas populares`;
+  } catch(e) {
+    document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error al cargar. Revisa tu conexión.</p></div>';
+  }
+}
+
+async function loadByGenre(genreId) {
+  showSkeletons();
+  try {
+    const res = await fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${genreId}&sort_by=popularity.desc&page=1`);
+    const data = await res.json();
+    renderMovies(data.results);
+    document.getElementById('countBar').textContent = `${data.results.length} películas encontradas`;
+  } catch(e) {
+    document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error al cargar.</p></div>';
+  }
+}
+
+async function searchMovies() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) { loadPopular(); return; }
+
+  document.getElementById('searchBtn').disabled = true;
+  showSkeletons(6);
+  document.getElementById('countBar').textContent = `Buscando "${q}"...`;
+
+  try {
+    const res = await fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(q)}&page=1`);
+    const data = await res.json();
+    if (data.results.length === 0) {
+      document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">🎞️</div><p>No encontré esa película.<br>Intenta con otro nombre o pregúntale al asistente.</p></div>';
+      document.getElementById('countBar').textContent = '0 resultados';
+    } else {
+      renderMovies(data.results);
+      document.getElementById('countBar').textContent = `${data.results.length} resultados para "${q}"`;
+    }
+  } catch(e) {
+    document.getElementById('moviesGrid').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><p>Error al buscar.</p></div>';
+  }
+
+  document.getElementById('searchBtn').disabled = false;
+}
+
+function renderMovies(movies) {
+  const grid = document.getElementById('moviesGrid');
+  grid.innerHTML = '';
+
+  movies.forEach((m, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'movie-tile';
+    tile.style.animationDelay = `${i * 0.04}s`;
+    tile.onclick = () => openModal(m);
+
+    if (m.poster_path) {
+      tile.innerHTML = `
+        <img src="${IMG_BASE}${m.poster_path}" alt="${m.title}" loading="lazy">
+        <div class="tile-overlay">
+          <div class="tile-title">${m.title}</div>
+          <div class="tile-year">${m.release_date ? m.release_date.substring(0,4) : ''}</div>
+        </div>
+        <div class="tile-price">$10</div>
+      `;
+    } else {
+      tile.innerHTML = `
+        <div class="no-poster">🎬<span>${m.title}</span></div>
+        <div class="tile-price">$10</div>
+      `;
+    }
+
+    grid.appendChild(tile);
+  });
+}
+
+// ============================================================
+// CARRITO
+// ============================================================
+const WA_NUMBER = '5215661038481';
+let cart = []; // { id, title, year, poster_path }
+let currentMovie = null;
+
+function toggleCart() {
+  if (!currentMovie) return;
+  const exists = cart.find(m => m.id === currentMovie.id);
+  if (exists) {
+    cart = cart.filter(m => m.id !== currentMovie.id);
+  } else {
+    cart.push({
+      id: currentMovie.id,
+      title: currentMovie.title,
+      year: currentMovie.release_date ? currentMovie.release_date.substring(0,4) : '',
+      poster_path: currentMovie.poster_path
+    });
+  }
+  updateCartBtn();
+  updateCartFab();
+}
+
+function updateCartBtn() {
+  const btn = document.getElementById('modalAddCartBtn');
+  if (!btn || !currentMovie) return;
+  const inCart = cart.find(m => m.id === currentMovie.id);
+  btn.textContent = inCart ? '✓ En el carrito' : '+ Agregar al carrito';
+  btn.classList.toggle('added', !!inCart);
+}
+
+function updateCartFab() {
+  const fab = document.getElementById('cartFab');
+  const count = document.getElementById('cartCount');
+  count.textContent = cart.length;
+  fab.classList.toggle('visible', cart.length > 0);
+}
+
+function openCartDrawer() {
+  renderCartItems();
+  document.getElementById('cartDrawer').classList.add('open');
+}
+
+function closeCartDrawer() {
+  document.getElementById('cartDrawer').classList.remove('open');
+}
+
+function renderCartItems() {
+  const container = document.getElementById('cartItems');
+  const totalEl = document.getElementById('cartTotal');
+
+  if (cart.length === 0) {
+    container.innerHTML = '<div class="cart-empty"><div class="icon">🎬</div><p>Tu carrito está vacío.<br>Agrega películas desde el catálogo.</p></div>';
+    totalEl.textContent = '$0';
+    return;
+  }
+
+  container.innerHTML = '';
+  cart.forEach(m => {
+    const item = document.createElement('div');
+    item.className = 'cart-item';
+    const posterHTML = m.poster_path
+      ? `<img src="${IMG_BASE}${m.poster_path}" alt="${m.title}">`
+      : `<div style="width:40px;height:60px;background:#1a1a2e;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:18px">🎬</div>`;
+
+    item.innerHTML = `
+      ${posterHTML}
+      <div class="cart-item-info">
+        <div class="cart-item-title">${m.title}</div>
+        <div class="cart-item-year">${m.year} · $10 pesos</div>
+      </div>
+      <button class="cart-item-remove" onclick="removeFromCart(${m.id})">✕</button>
+    `;
+    container.appendChild(item);
+  });
+
+  totalEl.textContent = `$${cart.length * 10}`;
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(m => m.id !== id);
+  updateCartFab();
+  renderCartItems();
+  updateCartBtn();
+}
+
+function enviarPedidoWA() {
+  if (cart.length === 0) return;
+  const lista = cart.map((m, i) => `${i+1}. ${m.title}${m.year ? ' (' + m.year + ')' : ''}`).join('\n');
+  const total = cart.length * 10;
+  const msg = encodeURIComponent(
+    `Hola! Vi tu catálogo de CineBox y quiero pedir:\n\n🎬 *PEDIDO*\n━━━━━━━━━━━━━━\n${lista}\n━━━━━━━━━━━━━━\nTotal: *$${total} pesos*\n\n¿Cómo procedo?`
+  );
+  window.open(`https://wa.me/${WA_NUMBER}?text=${msg}`, '_blank');
+}
+
+function contactarWhatsApp() {
+  if (!currentMovie) return;
+  cart = [{ id: currentMovie.id, title: currentMovie.title, year: currentMovie.release_date ? currentMovie.release_date.substring(0,4) : '', poster_path: currentMovie.poster_path }];
+  enviarPedidoWA();
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(movie) {
+  currentMovie = movie;
+  document.getElementById('modalTitle').textContent = movie.title;
+  const year = movie.release_date ? movie.release_date.substring(0,4) : '';
+  const rating = movie.vote_average ? `⭐ ${movie.vote_average.toFixed(1)}` : '';
+  document.getElementById('modalMeta').textContent = [year, rating].filter(Boolean).join(' · ');
+  document.getElementById('modalOverview').textContent = movie.overview || 'Sin descripción disponible.';
+
+  const poster = document.getElementById('modalPoster');
+  if (movie.poster_path) {
+    poster.src = `${IMG_ORIGINAL}${movie.poster_path}`;
+    poster.style.display = 'block';
+  } else {
+    poster.style.display = 'none';
+  }
+
+  updateCartBtn();
+  document.getElementById('movieModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('movieModal').classList.remove('open');
+}
+
+function handleModalClick(e) {
+  if (e.target === document.getElementById('movieModal')) closeModal();
+}
+
+// ============================================================
+// CHAT CON IA
+// ============================================================
+function addMsg(role, text, movies = []) {
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const av = document.createElement('div');
+  av.className = `av ${role}`;
+  av.textContent = role === 'ai' ? '🎬' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role}`;
+  bubble.innerHTML = text;
+
+  if (movies.length > 0) {
+    const grid = document.createElement('div');
+    grid.className = 'chat-results';
+
+    movies.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'chat-movie-card';
+      card.onclick = () => { openModal(m); };
+
+      const posterHTML = m.poster_path
+        ? `<img src="${IMG_BASE}${m.poster_path}" alt="${m.title}" loading="lazy">`
+        : `<div style="aspect-ratio:2/3;background:#1a1a2e;display:flex;align-items:center;justify-content:center;font-size:30px">🎬</div>`;
+
+      card.innerHTML = `
+        ${posterHTML}
+        <div class="chat-movie-info">
+          <div class="chat-movie-title">${m.title}</div>
+          <div class="chat-movie-meta">${m.release_date ? m.release_date.substring(0,4) : ''} · $10</div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    bubble.appendChild(grid);
+  }
+
+  row.appendChild(av);
+  row.appendChild(bubble);
+  container.appendChild(row);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function addLoading() {
+  const container = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  row.id = 'loadingRow';
+  row.innerHTML = `<div class="av ai">🎬</div><div class="bubble loading">Buscando películas<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>`;
+  container.appendChild(row);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function removeLoading() {
+  const el = document.getElementById('loadingRow');
+  if (el) el.remove();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function sendQuick(text) {
+  switchTab('chat');
+  setTimeout(() => {
+    document.getElementById('inputBox').value = text;
+    sendMessage();
+  }, 100);
+}
+
+async function sendMessage() {
+  const input = document.getElementById('inputBox');
+  const text = input.value.trim();
+  if (!text || isChatLoading) return;
+
+  document.getElementById('quickChips').style.display = 'none';
+  input.value = '';
+  input.style.height = 'auto';
+  isChatLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  addMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  addLoading();
+
+  // Primero: pedir a Claude qué buscar en TMDB
+  const systemPrompt = `Eres el asistente de CineBox, un videoclub digital en México donde las películas cuestan $10 pesos y se entregan por Google Drive.
+
+El cliente te dice qué quiere ver. Tu trabajo es:
+1. Entender su petición (género, estado de ánimo, actor, saga, año, etc.)
+2. Decidir qué buscar en TMDB para encontrar esas películas
+3. Responder en JSON exacto sin markdown:
+
+{
+  "message": "respuesta breve y amigable al cliente (1-2 oraciones)",
+  "search_query": "término en inglés para buscar en TMDB (ej: horror, action comedy, tom hanks, 1990s thriller)",
+  "genre_id": null,
+  "followUp": "pregunta de seguimiento si aplica o null"
+}
+
+Si el cliente pide un género específico, usa genre_id (acción=28, comedia=35, terror=27, romance=10749, animación=16, sci-fi=878, suspenso=53, drama=18, familiar=10751).
+Si pide por actor o título, usa search_query.
+Si solo saluda, devuelve search_query como null y genre_id como null.
+Responde siempre en español mexicano casual.`;
+
+  try {
+    const aiRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        system: systemPrompt,
+        messages: chatHistory
+      })
+    });
+
+    const aiData = await aiRes.json();
+    const rawText = aiData.content?.[0]?.text || '';
+
+    let parsed = null;
+    try {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch(e) {}
+
+    let movies = [];
+
+    // Buscar en TMDB con los parámetros que dio Claude
+    if (parsed) {
+      try {
+        let tmdbUrl = '';
+        if (parsed.search_query) {
+            tmdbUrl = `${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(parsed.search_query)}&page=1`;
+          } else if (parsed.genre_id) {
+            tmdbUrl = `${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${parsed.genre_id}&sort_by=popularity.desc&page=1`;
+          }
+
+          if (tmdbUrl) {
+            const tmdbRes = await fetch(tmdbUrl);
+          const tmdbData = await tmdbRes.json();
+          movies = (tmdbData.results || []).slice(0, 4);
+        }
+      } catch(e) { movies = []; }
+    }
+
+    removeLoading();
+
+    chatHistory.push({ role: 'assistant', content: rawText });
+
+    let msgText = parsed?.message || 'Aquí te va lo que encontré:';
+    if (parsed?.followUp) msgText += `<br><br><em style="color:var(--muted);font-size:12px">${parsed.followUp}</em>`;
+
+    addMsg('ai', msgText, movies);
+
+  } catch(err) {
+    removeLoading();
+    addMsg('ai', 'Tuve un problema conectándome. Intenta de nuevo 🙏');
+  }
+
+  isChatLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+buildGenreStrip();
+loadPopular();
+</script>
+</body>
+</html>
