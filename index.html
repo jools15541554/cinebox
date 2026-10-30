@@ -328,7 +328,7 @@ const IMG_W='https://image.tmdb.org/t/p/w500';
 const IMG_H='https://image.tmdb.org/t/p/w780';
 const WA='5215661038481';
 const BUNDLES=[{qty:3,price:25,save:5},{qty:6,price:50,save:10},{qty:12,price:100,save:20},{qty:24,price:200,save:40}];
-const GENRES=[{id:0,name:'⭐ Lo Mejor',type:'movie'},{id:28,name:'💥 Acción',type:'movie'},{id:35,name:'😂 Comedia',type:'movie'},{id:27,name:'😱 Terror',type:'movie'},{id:10749,name:'❤️ Romance',type:'movie'},{id:16,name:'🎨 Animación',type:'movie'},{id:878,name:'🚀 Sci-Fi',type:'movie'},{id:53,name:'🔍 Suspenso',type:'movie'},{id:18,name:'🎭 Drama',type:'movie'},{id:10751,name:'👨‍👩‍👧 Familiar',type:'movie'},{id:12,name:'🗺️ Aventura',type:'movie'},{id:-1,name:'📺 Series',type:'tv'}];
+const GENRES=[{id:0,name:'⭐ Lo Mejor',type:'movie'},{id:28,name:'💥 Acción',type:'movie'},{id:35,name:'😂 Comedia',type:'movie'},{id:27,name:'😱 Terror',type:'movie'},{id:10749,name:'❤️ Romance',type:'movie'},{id:16,name:'🎨 Animación',type:'movie'},{id:878,name:'🚀 Sci-Fi',type:'movie'},{id:53,name:'🔍 Suspenso',type:'movie'},{id:18,name:'🎭 Drama',type:'movie'},{id:10751,name:'👨‍👩‍👧 Familiar',type:'movie'},{id:12,name:'🗺️ Aventura',type:'movie'},{id:-1,name:'📺 Series',type:'tv'},{id:-2,name:'🎞️ Sagas',type:'saga'}];
 let cart=[],currentMovie=null;
 function calcTotal(items){
   const movies=items.filter(m=>!m.is_tv);
@@ -339,24 +339,36 @@ function calcTotal(items){
   return{total:s*b.price+l*10,discount:qty*10-(s*b.price+l*10),bundle:b,movieQty:qty};
 }
 
-function buildGenreStrip(){const strip=document.getElementById('genreStrip');GENRES.forEach((g,i)=>{const c=document.createElement('span');c.className='gchip'+(i===0?' active':'');c.textContent=g.name;c.onclick=()=>{setActiveGenre(c);if(g.id===0)loadPopular();else if(g.type==='tv')loadSeries();else loadByGenre(g.id);};strip.appendChild(c);});}
+function buildGenreStrip(){const strip=document.getElementById('genreStrip');GENRES.forEach((g,i)=>{const c=document.createElement('span');c.className='gchip'+(i===0?' active':'');c.textContent=g.name;c.onclick=()=>{setActiveGenre(c);if(g.id===0)loadPopular();else if(g.type==='saga')loadSagas();else if(g.type==='tv')loadSeries();else loadByGenre(g.id);};strip.appendChild(c);});}
 function setActiveGenre(el){document.querySelectorAll('.gchip').forEach(c=>c.classList.remove('active'));el.classList.add('active');}
 function showSkeletons(n=12){document.getElementById('moviesGrid').innerHTML=Array(n).fill('<div class="skeleton"></div>').join('');}
 async function loadPopular(){showSkeletons();document.getElementById('countBar').textContent='Cargando...';try{
-const pages=await Promise.all([1,2,3,4,5].map(p=>fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&sort_by=vote_average.desc&vote_count.gte=500&primary_release_date.gte=2020-01-01&primary_release_date.lte=2025-12-31&page=${p}`).then(r=>r.json())));
-const all=[...new Map(pages.flatMap(d=>d.results||[]).map(m=>[m.id,m])).values()].filter(m=>m.poster_path).slice(0,100);
-renderMovies(all,true);document.getElementById('countBar').textContent=`Lo mejor 2020-2025 — ${all.length} películas`;
+const pages=await Promise.all([1,2,3,4,5,6,7,8,9,10].map(p=>fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&sort_by=vote_average.desc&vote_count.gte=500&primary_release_date.gte=2020-01-01&primary_release_date.lte=2026-12-31&page=${p}`).then(r=>r.json())));
+const all=[...new Map(pages.flatMap(d=>d.results||[]).map(m=>[m.id,m])).values()].filter(m=>m.poster_path).slice(0,200);
+renderMovies(all,true);document.getElementById('countBar').textContent=`Lo mejor 2020-2026 — ${all.length} películas`;
 }catch(e){document.getElementById('moviesGrid').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Sin conexión.</p></div>';}}
 async function loadByGenre(id){showSkeletons();try{
-const pages=await Promise.all([1,2,3,4,5].map(p=>fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${id}&sort_by=vote_average.desc&vote_count.gte=300&primary_release_date.gte=2020-01-01&primary_release_date.lte=2025-12-31&page=${p}`).then(r=>r.json())));
-const all=[...new Map(pages.flatMap(d=>d.results||[]).map(m=>[m.id,m])).values()].filter(m=>m.poster_path).slice(0,100);
-renderMovies(all,false);document.getElementById('countBar').textContent=`Lo mejor del género 2020-2025 — ${all.length} películas`;
+const pages=await Promise.all([1,2,3,4,5,6,7,8,9,10].map(p=>fetch(`${TMDB_BASE}/discover/movie?api_key=${TMDB_KEY}&language=es-MX&with_genres=${id}&sort_by=vote_average.desc&vote_count.gte=300&primary_release_date.gte=2020-01-01&primary_release_date.lte=2026-12-31&page=${p}`).then(r=>r.json())));
+const all=[...new Map(pages.flatMap(d=>d.results||[]).map(m=>[m.id,m])).values()].filter(m=>m.poster_path).slice(0,200);
+renderMovies(all,false);document.getElementById('countBar').textContent=`Lo mejor del género 2020-2026 — ${all.length} películas`;
 }catch(e){}}
 async function loadSeries(){showSkeletons();try{
-const pages=await Promise.all([1,2,3,4,5].map(p=>fetch(`${TMDB_BASE}/discover/tv?api_key=${TMDB_KEY}&language=es-MX&sort_by=vote_average.desc&vote_count.gte=300&first_air_date.gte=2020-01-01&first_air_date.lte=2025-12-31&page=${p}`).then(r=>r.json())));
-const all=[...new Map(pages.flatMap(d=>d.results||[]).map(m=>[m.id,{...m,title:m.name||m.title,release_date:m.first_air_date,is_tv:true}])).values()].filter(m=>m.poster_path).slice(0,100);
-renderMovies(all,false);document.getElementById('countBar').textContent=`Series 2020-2025 — ${all.length} series`;
+const pages=await Promise.all([1,2,3,4,5,6,7,8,9,10].map(p=>fetch(`${TMDB_BASE}/discover/tv?api_key=${TMDB_KEY}&language=es-MX&sort_by=vote_average.desc&vote_count.gte=300&first_air_date.gte=2020-01-01&first_air_date.lte=2026-12-31&page=${p}`).then(r=>r.json())));
+const all=[...new Map(pages.flatMap(d=>d.results||[]).map(m=>[m.id,{...m,title:m.name||m.title,release_date:m.first_air_date,is_tv:true}])).values()].filter(m=>m.poster_path).slice(0,200);
+renderMovies(all,false);document.getElementById('countBar').textContent=`Series 2020-2026 — ${all.length} series`;
 }catch(e){}}
+const SAGAS=["Harry Potter","Transformers","Fast & Furious","Star Wars","The Lord of the Rings","The Hobbit","The Matrix","John Wick","Mission: Impossible","Pirates of the Caribbean","Jurassic Park","Avengers","Toy Story","Shrek","Ice Age","Despicable Me","Kung Fu Panda","How to Train Your Dragon","The Hunger Games","Twilight","Spider-Man","The Dark Knight","Rocky","Terminator","Alien","Indiana Jones","Back to the Future","Mad Max","X-Men","Guardians of the Galaxy","Thor","Iron Man","Captain America","Madagascar","Cars","Frozen","Saw","Final Destination","The Conjuring","Resident Evil","Maze Runner","Percy Jackson","Bourne","Die Hard","Jumanji","Home Alone","Hotel Transylvania","Deadpool","Venom","Kingsman"];
+let sagaCache=null,curSaga=null;
+async function loadSagas(){curSaga=null;showSkeletons(12);document.getElementById('countBar').textContent='Cargando sagas...';try{
+if(!sagaCache){const rs=await Promise.all(SAGAS.map(n=>fetch(`${TMDB_BASE}/search/collection?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(n)}`).then(r=>r.json()).catch(()=>null)));const seen=new Set();sagaCache=rs.map(r=>r&&r.results&&r.results[0]).filter(s=>s&&s.poster_path&&!seen.has(s.id)&&seen.add(s.id));}
+const g=document.getElementById('moviesGrid');g.innerHTML='';
+sagaCache.forEach((s,i)=>{const t=document.createElement('div');t.className='movie-tile';t.style.animationDelay=`${i*0.03}s`;t.onclick=()=>openSaga(s);t.innerHTML=`<img src="${IMG_W}${s.poster_path}" alt="${s.name}" loading="lazy"><div class="tile-overlay"><div class="tile-title">${s.name.replace(/\s*[-–]?\s*(Collection|Colección|Saga)$/i,'')}</div><div class="tile-year">SAGA</div></div>`;g.appendChild(t);});
+document.getElementById('countBar').textContent=`${sagaCache.length} sagas — toca una para ver sus películas`;}catch(e){}}
+async function openSaga(s){showSkeletons(6);try{const d=await fetch(`${TMDB_BASE}/collection/${s.id}?api_key=${TMDB_KEY}&language=es-MX`).then(r=>r.json());
+const parts=(d.parts||[]).filter(m=>m.poster_path).sort((a,b)=>(a.release_date||'9').localeCompare(b.release_date||'9'));curSaga=parts;renderMovies(parts,false);
+const st='background:var(--surface);border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:5px 10px;margin-right:6px;font:inherit;cursor:pointer';
+document.getElementById('countBar').innerHTML=`<button style="${st}" onclick="loadSagas()">← Sagas</button><button style="${st}" onclick="addSaga()">＋ Agregar saga completa (${parts.length})</button>`;}catch(e){}}
+function addSaga(){if(!curSaga)return;let n=0;curSaga.forEach(m=>{if(!cart.find(x=>x.id===m.id)){cart.push({id:m.id,title:m.title,year:(m.release_date||'').slice(0,4),poster_path:m.poster_path,is_tv:false});n++;}});updateCartIcon();refreshGridMarks();showToast(`🎬 ${n} películas agregadas`);setTimeout(checkUpsellToast,400);}
 async function searchMovies(){const q=document.getElementById('searchInput').value.trim();if(!q){loadPopular();return;}showSkeletons(6);document.getElementById('countBar').textContent='Buscando...';try{
 const[rm,rt]=await Promise.all([
   fetch(`${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&language=es-MX&query=${encodeURIComponent(q)}&page=1`).then(r=>r.json()),
@@ -612,7 +624,76 @@ const saved=localStorage.getItem("theme");if(saved==="light"){document.body.clas
 
   </div>
 
-  <p style="margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;text-transform:uppercase">Películas & Series + · 2025</p>
+  <p style="margin-top:24px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;text-transform:uppercase">Películas & Series + · 2026</p><p style="margin-top:6px;font-size:9px;color:var(--muted2)">Datos e imágenes: TMDB</p><button onclick="openGen()" aria-label="generador" style="display:block;margin:10px auto 0;background:none;border:0;opacity:.25;font-size:14px;cursor:pointer">🖼️</button>
 </div>
+
+<style>
+.g-w{max-width:760px;margin:0 auto;padding:16px 16px 60px}
+.g-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:16px}
+.g-h button{background:var(--surface);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:50%;cursor:pointer}
+.g-f{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.g-f label{font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.g-f select,.g-f input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px;font-family:'Poppins',sans-serif;font-size:13px}
+.g-b{width:100%;background:var(--accent);color:#0B0B0B;border:0;border-radius:10px;padding:13px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;cursor:pointer;margin:6px 0}
+.g-b.alt{background:var(--surface);color:var(--text);border:1px solid var(--border)}
+.g-r{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+#gCanvas{width:100%;height:auto;border-radius:8px;cursor:pointer;display:block;margin-bottom:6px}
+#gList{width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px;font-size:12px;margin-top:8px}
+.g-n{font-size:11px;color:var(--muted);margin:4px 0}
+</style>
+<div id="genView" style="display:none;position:fixed;inset:0;z-index:700;background:var(--bg);overflow-y:auto"><div class="g-w">
+<div class="g-h"><span>🖼️ Generador de pósters</span><button onclick="closeGen()">✕</button></div>
+<div class="g-f">
+<label>Tipo<select id="gType" onchange="genFillCats()"><option value="movie">Películas</option><option value="tv">Series</option></select></label>
+<label>Categoría<select id="gCat"></select></label>
+<label>Año desde<input id="gFrom" type="number" value="2020" min="1950" max="2026"></label>
+<label>Año hasta<input id="gTo" type="number" value="2026" min="1950" max="2026"></label>
+<label>Orden<select id="gSort"><option value="vote_average">Mejor calificadas</option><option value="popularity">Más populares</option><option value="vote_count">Más votadas</option><option value="recent">Más recientes</option></select></label>
+<label>Diseño<select id="gLayout" onchange="genRedo()"><option value="4x2">4×2 (8)</option><option value="3x2">3×2 (6)</option><option value="3x3">3×3 (9)</option><option value="5x2">5×2 (10)</option><option value="4x3">4×3 (12)</option><option value="5x3">5×3 (15)</option></select></label>
+<label>Calidad<select id="gQual" onchange="genDrawIf()"><option value="400">Normal</option><option value="500" selected>Alta</option><option value="780">Máxima</option></select></label>
+<label>Separación<select id="gGap" onchange="genDrawIf()"><option value="0">Sin separación</option><option value="6">Fina</option></select></label>
+</div>
+<button class="g-b" id="gBtn" onclick="genBuild()">Generar collage</button>
+<div id="gOut" style="display:none">
+<canvas id="gCanvas"></canvas>
+<p class="g-n">Toca un póster para cambiarlo por otro.</p>
+<div class="g-r"><button class="g-b alt" onclick="genShuffle()">🔀 Mezclar</button><button class="g-b alt" onclick="genDownload()">⬇️ Descargar</button><button class="g-b alt" onclick="genShare()">📤 Compartir</button></div>
+<textarea id="gList" readonly rows="6"></textarea>
+<button class="g-b alt" onclick="genCopy()">Copiar lista de títulos</button>
+</div>
+<p class="g-n">Datos e imágenes: TMDB. Este producto usa la API de TMDB pero no está avalado ni certificado por TMDB.</p>
+</div></div>
+<script>
+const GEN_G={movie:[[0,'Todas'],[28,'Acción'],[12,'Aventura'],[16,'Animación'],[35,'Comedia'],[80,'Crimen'],[99,'Documental'],[18,'Drama'],[10751,'Familiar'],[14,'Fantasía'],[27,'Terror'],[10749,'Romance'],[878,'Ciencia ficción'],[53,'Suspenso'],[10752,'Bélica'],[37,'Western']],tv:[[0,'Todas'],[10759,'Acción y aventura'],[16,'Animación'],[35,'Comedia'],[80,'Crimen'],[18,'Drama'],[10751,'Familiar'],[9648,'Misterio'],[10765,'Sci-Fi y fantasía'],[10768,'Guerra y política'],[37,'Western'],[99,'Documental']]};
+let gPool=[],gSlots=[],gNext=0,gCache={};
+const $g=id=>document.getElementById(id);
+function genFillCats(){$g('gCat').innerHTML=GEN_G[$g('gType').value].map(([v,n])=>`<option value="${v}">${n}</option>`).join('');}
+function openGen(){history.pushState({gen:true},'');$g('genView').style.display='block';if(!$g('gCat').options.length)genFillCats();}
+function closeGen(){$g('genView').style.display='none';}
+window.addEventListener('popstate',()=>{if($g('genView').style.display==='block')closeGen();});
+function genDims(){const[c,r]=$g('gLayout').value.split('x').map(Number);return{c,r,n:c*r,cw:+$g('gQual').value,g:+$g('gGap').value};}
+function genFillSlots(){const{n}=genDims();gSlots=[];for(let i=0;i<n&&i<gPool.length;i++)gSlots.push(i);gNext=gSlots.length;}
+function genImg(m,cw){const u=`https://image.tmdb.org/t/p/${cw>500?'w780':'w500'}${m.path}`;return gCache[u]||(gCache[u]=new Promise(res=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>res(null);im.src=u;}));}
+async function genDraw(){const{c,r,cw,g}=genDims(),ch=Math.round(cw*1.5),cv=$g('gCanvas');cv.width=c*cw+(c+1)*g;cv.height=r*ch+(r+1)*g;const x=cv.getContext('2d');x.fillStyle='#000';x.fillRect(0,0,cv.width,cv.height);
+const ims=await Promise.all(gSlots.map(i=>genImg(gPool[i],cw)));ims.forEach((im,k)=>{if(im)x.drawImage(im,g+(k%c)*(cw+g),g+Math.floor(k/c)*(ch+g),cw,ch);});
+$g('gOut').style.display='block';$g('gList').value=gSlots.map(i=>`• ${gPool[i].title}${gPool[i].year?' ('+gPool[i].year+')':''}`).join('\n');}
+function genDrawIf(){if(gPool.length)genDraw();}
+function genRedo(){if(gPool.length){genFillSlots();genDraw();}}
+async function genBuild(){const t=$g('gType').value,cat=$g('gCat').value,y1=$g('gFrom').value||2020,y2=$g('gTo').value||2026,s=$g('gSort').value,dk=t==='tv'?'first_air_date':'primary_release_date';
+const base=`${TMDB_BASE}/discover/${t}?api_key=${TMDB_KEY}&language=es-MX&sort_by=${s==='recent'?dk:s}.desc&vote_count.gte=${s==='recent'?30:(t==='tv'?200:300)}&${dk}.gte=${y1}-01-01&${dk}.lte=${y2}-12-31`+(cat!=='0'?`&with_genres=${cat}`:'');
+$g('gBtn').disabled=true;$g('gBtn').textContent='Buscando...';
+try{const pg=await Promise.all([1,2,3,4,5].map(p=>fetch(base+'&page='+p).then(r=>r.json())));const seen=new Set();
+gPool=pg.flatMap(d=>d.results||[]).filter(m=>m.poster_path&&!seen.has(m.id)&&seen.add(m.id)).map(m=>({path:m.poster_path,title:m.title||m.name,year:(m.release_date||m.first_air_date||'').slice(0,4)}));
+if(!gPool.length)showToast('No hay resultados con esos filtros');else{genFillSlots();await genDraw();}}catch(e){showToast('Error al conectar con TMDB');}
+$g('gBtn').disabled=false;$g('gBtn').textContent='Generar collage';}
+function genShuffle(){if(!gPool.length)return;for(let i=gPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[gPool[i],gPool[j]]=[gPool[j],gPool[i]];}genFillSlots();genDraw();}
+$g('gCanvas').addEventListener('click',async e=>{if(!gSlots.length)return;const{c,r,cw,g}=genDims(),ch=Math.round(cw*1.5),cv=$g('gCanvas'),b=cv.getBoundingClientRect(),k=cv.width/b.width;
+const col=Math.floor(((e.clientX-b.left)*k-g)/(cw+g)),row=Math.floor(((e.clientY-b.top)*k-g)/(ch+g));if(col<0||row<0||col>=c||row>=r||row*c+col>=gSlots.length)return;
+if(gNext>=gPool.length){showToast('No hay más pósters para cambiar');return;}gSlots[row*c+col]=gNext++;await genDraw();});
+function genBlob(){return new Promise(res=>{try{$g('gCanvas').toBlob(b=>res(b),'image/png');}catch(e){res(null);}});}
+async function genDownload(){const b=await genBlob();if(!b){showToast('No se pudo crear la imagen');return;}const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`posters-${Date.now()}.png`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
+async function genShare(){const b=await genBlob();if(!b){showToast('No se pudo crear la imagen');return;}const f=new File([b],'posters.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f]}).catch(()=>{});else showToast('Tu navegador no permite compartir, usa Descargar');}
+function genCopy(){const t=$g('gList');t.select();if(navigator.clipboard)navigator.clipboard.writeText(t.value).then(()=>showToast('Lista copiada'));else document.execCommand('copy');}
+</script>
 </body>
 </html>
